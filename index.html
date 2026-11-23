@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Origin playtest</title>
-<meta name="description" content="Closed playtest of Origin by Dark Oasis Games.">
+<title>Cycles of Genesis playtest</title>
+<meta name="description" content="Closed playtest of Cycles of Genesis by Dark Oasis Games.">
 <meta name="theme-color" content="#03060c">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -31,6 +31,7 @@ body{margin:0;min-height:100vh;color:var(--text);font:500 17px/1.45 Rajdhani,"Se
 .wrap{max-width:860px;margin:0 auto;padding:max(22px,env(safe-area-inset-top)) 16px 64px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
 .logo{font:700 46px/1 Rajdhani,sans-serif;letter-spacing:.32em;color:#fff;text-shadow:0 0 18px rgba(95,212,255,.85),0 0 42px rgba(95,212,255,.45);margin:0;padding-left:.1em}
+.logo .pre{display:block;font-size:.3em;letter-spacing:.55em;margin:0 0 6px;color:#cfeeff;text-transform:uppercase}
 .tag{font:600 13px Rajdhani;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 .who{font:600 14px Rajdhani;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:right}
 .who a{color:var(--cyan);text-decoration:none;cursor:pointer}
@@ -78,9 +79,9 @@ footer{margin-top:36px;color:var(--faint);font-size:14px;letter-spacing:.08em}
 <body>
 <div class="sky" aria-hidden="true"><div class="stars"></div><div class="stars2"></div><div class="planet"></div></div>
 <div class="wrap">
-<header><div><h1 class="logo">ORIGIN</h1><div class="tag">Closed playtest</div></div><div class="who" id="who"></div></header>
+<header><div><h1 class="logo"><span class="pre">Cycles of</span>GENESIS</h1><div class="tag">Closed playtest</div></div><div class="who" id="who"></div></header>
 <main id="app"><div class="panel"><span class="spin"></span>Loading…</div></main>
-<footer>Origin by Dark Oasis Games · <a id="discordFoot" target="_blank" rel="noopener">Discord</a></footer>
+<footer>Cycles of Genesis by Dark Oasis Games · <a id="discordFoot" target="_blank" rel="noopener">Discord</a></footer>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -107,21 +108,21 @@ function day(d){if(!d)return "";if(/^\d{4}-\d\d-\d\d$/.test(d))d+="T12:00:00";re
 function discordBtn(){return '<a class="btn alt" target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">'+ICON_DC+'Join the Discord</a>'}
 function err(e){app.innerHTML='<div class="panel"><h2>Something went wrong</h2><p class="dim">'+esc(e&&e.message||e||"Could not reach the playtest server.")+'</p><button class="btn" id="retry">Try again</button></div>';document.getElementById("retry").onclick=start}
 function setWho(){whoEl.innerHTML=D&&D.name?esc(D.name)+'<br><a id="out">Sign out</a>':"";var o=document.getElementById("out");if(o)o.onclick=function(){store("agetok",null);TOK=null;D=null;start()}}
-function signedOut(){app.innerHTML='<div class="panel"><h2>Closed playtest</h2><p>Origin is in a closed playtest. Sign in with your Steam account to get the download. If you\'re on the list, it\'s right there.</p>'
+function signedOut(){app.innerHTML='<div class="panel"><h2>Closed playtest</h2><p>Cycles of Genesis is in a closed playtest. Sign in with your Steam account to get the download. If you\'re on the list, it\'s right there.</p>'
  +'<a class="btn big" href="'+esc(steamUrl())+'" target="_top">'+ICON_STEAM+'Sign in with Steam</a><p class="faint">You sign in on Steam\'s own page. We only receive your public Steam ID and name, never your password.</p></div>'
  +'<div class="panel"><h4>Want in?</h4><p class="dim">Sign in once so we know your Steam account, then ask in the Discord.</p>'+discordBtn()+'</div>'}
 function waiting(){var den=D.status==="denied";app.innerHTML='<div class="panel"><h2>'+(den?"Not in this round":"You're on the waiting list")+'</h2><p>Thanks, <b>'+esc(D.name)+'</b>. '
  +(den?"This playtest round is full or closed for your account. Keep an eye on the Discord for the next one.":"Your Steam account isn't on the playtest list yet. The developer has been told you asked. Say hi in the Discord to speed it up.")+'</p>'
  +discordBtn()+'<button class="btn" id="again">Check again</button></div>';document.getElementById("again").onclick=start}
 function notes(n){if(!n||!n.cats||!n.cats.length)return '<p class="dim">No patch notes for this build.</p>';return n.cats.map(function(c){return '<div class="cat"><b>'+esc(c.name)+'</b><ul>'+c.items.map(function(i){return "<li>"+esc(i)+"</li>"}).join("")+'</ul></div>'}).join("")}
-function dlBlock(b){if(!MOBILE)return '<a class="btn big" href="https://play.darkoasisgames.com/OriginLauncher.exe" download>Download the launcher</a><p class="faint">Windows · 1 MB · installs this build, keeps it updated and switches between builds</p><p class="faint"><a href="#" data-dl="'+esc(b.name)+'">Or download the zip instead</a> ('+b.sizeMb+' MB)</p>';
- var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Origin runs on Windows PCs, so download it there: open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC and sign in with Steam.</div>'
- +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Origin playtest download")+'&body='+encodeURIComponent("Open this on my Windows PC and sign in with Steam: "+link)+'">Email me the link</a>'
+function dlBlock(b){if(!MOBILE)return '<a class="btn big" href="https://play.darkoasisgames.com/CyclesOfGenesisLauncher.exe" download>Download the launcher</a><p class="faint">Windows · 1 MB · installs this build, keeps it updated and switches between builds</p><p class="faint"><a href="#" data-dl="'+esc(b.name)+'">Or download the zip instead</a> ('+b.sizeMb+' MB)</p>';
+ var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Cycles of Genesis runs on Windows PCs, so download it there: open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC and sign in with Steam.</div>'
+ +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Cycles of Genesis playtest download")+'&body='+encodeURIComponent("Open this on my Windows PC and sign in with Steam: "+link)+'">Email me the link</a>'
  +'<button class="btn" id="copy">Copy link</button><p class="faint"><a href="#" data-dl="'+esc(b.name)+'">Download here anyway</a> ('+b.sizeMb+' MB)</p>'}
 function full(){var b=D.builds[0],h="";
  if(!b)h+='<div class="panel"><h2>No build yet</h2><p class="dim">The next playtest build is on its way. Check the Discord.</p>'+discordBtn()+'</div>';
  else{h+='<div class="panel"><div class="tag">Latest build</div><h2>'+esc(b.name)+'</h2><p class="dim">Released '+day((b.notes&&b.notes.date)||b.added)+'</p>'+dlBlock(b)+'</div>';
-  h+='<h3>How to install and play</h3><div class="panel"><ol class="steps"><li><b>Open Steam and sign in.</b> Keep it running the whole time, or the game won\'t start.</li><li><b>Download the launcher</b> above on your Windows PC and run <b>OriginLauncher.exe</b>.</li><li>If Windows shows <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>. The playtest isn\'t signed yet.</li><li>Press <b>Sign in</b> in the launcher and sign in with Steam in your browser. It downloads the latest build, then press <b>Play</b>. New builds show up there by themselves.</li><li>Logs and replays upload by themselves. Found a bug? Use <b>REPORT BUG</b> in the main menu or the pause menu.</li><li>Stuck, or want to talk bugs and balance? Ask in the <a target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">Discord</a>.</li></ol><details><summary>Using the zip instead</summary><ol class="steps"><li>Download the zip above, then in your Downloads folder <b>right-click it &gt; Extract All</b>, somewhere easy like your Desktop.</li><li>Open the extracted folder and double-click the <b>Play</b> .bat file. Steam must be open.</li></ol></details></div>';
+  h+='<h3>How to install and play</h3><div class="panel"><ol class="steps"><li><b>Open Steam and sign in.</b> Keep it running the whole time, or the game won\'t start.</li><li><b>Download the launcher</b> above on your Windows PC and run <b>CyclesOfGenesisLauncher.exe</b>.</li><li>If Windows shows <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>. The playtest isn\'t signed yet.</li><li>Press <b>Sign in</b> in the launcher and sign in with Steam in your browser. It downloads the latest build, then press <b>Play</b>. New builds show up there by themselves.</li><li>Logs and replays upload by themselves. Found a bug? Use <b>REPORT BUG</b> in the main menu or the pause menu.</li><li>Stuck, or want to talk bugs and balance? Ask in the <a target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">Discord</a>.</li></ol><details><summary>Using the zip instead</summary><ol class="steps"><li>Download the zip above, then in your Downloads folder <b>right-click it &gt; Extract All</b>, somewhere easy like your Desktop.</li><li>Open the extracted folder and double-click the <b>Play</b> .bat file. Steam must be open.</li></ol></details></div>';
   h+='<h3>What\'s new</h3><div class="panel">'+notes(b.notes)+'</div>'}
  if(D.objectives&&D.objectives.length)h+='<h3>This week\'s objectives</h3><div class="grid">'+D.objectives.map(function(o){return '<div class="panel"><h4>'+esc(o.title)+'</h4><p class="dim">'+esc(o.description)+'</p><div class="row"><span><span class="pts">'+o.points+' pts</span>'+(o.trophy?' · <span class="trophy">'+esc(o.trophy)+'</span>':'')+'</span><span>'+o.completedBy+' done</span></div></div>'}).join("")+'</div>';
  var boards=(D.boards||[]).filter(function(x){return x.entries.length});if(D.season&&D.season.length)boards.unshift({title:"Season points",unit:"pts",entries:D.season});
