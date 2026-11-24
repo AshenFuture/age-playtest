@@ -28,7 +28,7 @@ var app=document.getElementById("app"),tabsEl=document.getElementById("tabs"),D=
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
 function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?esc(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
-function signIn(msg){var site=!window.AGE_API;app.innerHTML='<div class="card"><h2>Admin sign-in</h2><p class="muted">'+esc(msg||"Sign in with the developer's Steam account.")+'</p><a class="big" href="'+esc(API+"/admin/login?to="+(site?"site":"self"))+'">Sign in with Steam</a></div>';tabsEl.innerHTML=""}
+function signIn(msg){var site=!window.AGE_API;app.innerHTML='<div class="card"><h2>Admin sign-in</h2><p class="muted">'+esc(msg||"Sign in with the developer's Steam account.")+'</p><a class="big" href="'+esc(API+"/admin/login?to="+(site?"site&site="+encodeURIComponent(location.origin):"self"))+'">Sign in with Steam</a></div>';tabsEl.innerHTML=""}
 function call(method,q,body){var o={method:method,headers:{Authorization:"Bearer "+TOK}};if(body){o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
  return fetch(API+"/?"+q,o).then(function(r){return r.json()})}
 function op(o){o.kind="admin";return call("POST","",o).then(function(r){if(!r.ok)alert(r.error||"failed");return r})}
