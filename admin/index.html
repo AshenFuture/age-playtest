@@ -74,6 +74,7 @@ document.addEventListener("change",function(e){var t=e.target;if(t.dataset.bug){
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
  TAB=ls("agetab")||"p";TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
  if(!TOK)return signIn();load()}
-if(API)start();else fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){API=String(c.api||"").replace(/\/+$/,"");start()}).catch(function(){app.innerHTML='<p>Could not read config.json.</p>'});
+function pickApi(def){return fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){var l=[c.api,c.fallback].filter(Boolean);function t(i){if(i>=l.length)return def;var u=String(l[i]).replace(/\/+$/,"");return fetch(u+"/?action=ping",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){return j&&"ok" in j?u:t(i+1)},function(){return t(i+1)})}return t(0)},function(){return def})}
+if(API)start();else pickApi("").then(function(u){API=u;if(!u){app.innerHTML="<p>Could not reach the playtest server.</p>";return}start()});
 })();
 </script></body></html>
