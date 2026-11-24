@@ -145,7 +145,8 @@ function start(){TOK=load("agetok");app.innerHTML='<div class="panel"><span clas
  C.openid=null;
  p.then(function(r){if(!r||!r.ok){if(r&&r.signin){store("agetok",null);TOK=null;D={status:"signedout"};return render()}return err(r&&r.error)}D=r;if(D.discord)DISCORD=D.discord;document.getElementById("discordFoot").href=DISCORD;if(D.status==="signedout"){store("agetok",null);TOK=null}render()}).catch(err)}
 document.getElementById("discordFoot").href=DISCORD;
-start();
+// config.json {"api": "<backend url>"} picks the backend; without it, the Apps Script URL above.
+if(C.mode==="gas")start();else fetch("config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){if(c&&c.api)C.api=String(c.api)}).catch(function(){}).then(start);
 })();
 </script>
 </body>

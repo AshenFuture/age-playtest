@@ -25,7 +25,7 @@ if(!mode){location.replace(steam());return}
 if(mode!=="id_res"){show("Sign-in cancelled","Steam sign-in was cancelled.",'<a class="b" href="'+esc(steam())+'">Try again</a>');return}
 var a=new URLSearchParams();q.forEach(function(v,k){if(k.indexOf("openid.")===0)a.set(k,v)});a.set("action","launcherSignIn");
 history.replaceState(null,"",back);
-fetch(API+"?"+a.toString()).then(function(r){return r.json()}).then(function(r){
+fetch("config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){if(c&&c.api)API=String(c.api)},function(){}).then(function(){return fetch(API+"?"+a.toString())}).then(function(r){return r.json()}).then(function(r){
  if(r.ok){show("Signed in as "+r.name,"Back to the launcher. You can close this tab.");location.replace(done+"&token="+encodeURIComponent(r.token));return}
  if(r.error==="not_approved"){show("Not on the playtest list yet","Hi "+r.name+". Your Steam account is not approved yet. Ask in the Discord and Matt can add you.",
   '<a class="b" href="'+esc(done+"&error=not_approved&steamId="+r.steamId)+'">Back to the launcher</a>'+(r.discord?'<a class="d" target="_blank" rel="noopener" href="'+esc(r.discord)+'">Join the Discord</a>':""));return}

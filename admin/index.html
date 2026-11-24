@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<title>Age playtesters</title>
+<style>
+:root{--bg:#0b1016;--panel:#121a23;--line:#24323f;--text:#e4edf3;--muted:#8aa0b0;--acc:#5fd4ff;--ok:#7fdc7f;--bad:#ff7a7a;--warn:#e0c070}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+h1{font-size:16px;letter-spacing:.2em;margin:0 12px 0 0;color:var(--acc)}
+select,button,input{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
+button{cursor:pointer}button:hover{border-color:var(--acc)}button.ok{border-color:#3d7a3d}button.bad{border-color:#8a3a3a}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px}nav button.on{background:var(--acc);color:#04121a;border-color:var(--acc)}
+main{padding:8px 16px 40px}.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:600px}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--bg)}
+td.pre{white-space:pre-wrap;max-width:520px}.muted{color:var(--muted)}.slow{color:var(--warn)}.tag{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--line);font-size:12px}
+.approved{color:var(--ok)}.denied{color:var(--bad)}.requested{color:var(--warn)}a{color:var(--acc)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;max-width:420px;margin:40px auto;text-align:center}
+.big{display:inline-block;padding:12px 22px;background:var(--acc);color:#04121a;border-radius:8px;font-weight:700;text-decoration:none}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+</style></head><body>
+<header><h1>AGE PLAYTEST</h1><select id="build"><option value="">All builds</option></select><span id="me" class="muted"></span><span style="flex:1"></span><button id="reload">Reload</button><button id="out">Sign out</button></header>
+<nav id="tabs"></nav><main id="app"><p class="muted">Loading…</p></main>
+<script>/*API*/</script>
+<script>
+(function(){
+var SLOW_AVG=40,SLOW_LOW=20;
+var app=document.getElementById("app"),tabsEl=document.getElementById("tabs"),D=null,TAB="p",API=window.AGE_API||"",TOK=null;
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?esc(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
+function signIn(msg){var site=!window.AGE_API;app.innerHTML='<div class="card"><h2>Admin sign-in</h2><p class="muted">'+esc(msg||"Sign in with the developer's Steam account.")+'</p><a class="big" href="'+esc(API+"/admin/login?to="+(site?"site":"self"))+'">Sign in with Steam</a></div>';tabsEl.innerHTML=""}
+function call(method,q,body){var o={method:method,headers:{Authorization:"Bearer "+TOK}};if(body){o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
+ return fetch(API+"/?"+q,o).then(function(r){return r.json()})}
+function op(o){o.kind="admin";return call("POST","",o).then(function(r){if(!r.ok)alert(r.error||"failed");return r})}
+function load(){app.innerHTML='<p class="muted">Loading…</p>';var b=document.getElementById("build").value;
+ call("GET","action=admin"+(b?"&build="+encodeURIComponent(b):"")).then(function(r){if(!r.ok){ls("ageadm",null);TOK=null;return signIn("Session ended. Sign in again.")}D=r;fillBuilds();render()}).catch(function(e){app.innerHTML='<p class="bad">'+esc(e.message||e)+'</p>'})}
+function fillBuilds(){var s=document.getElementById("build"),cur=s.value,all={};D.builds.concat(D.releases.map(function(x){return x.name})).forEach(function(b){all[b]=1});
+ s.innerHTML='<option value="">All builds</option>'+Object.keys(all).sort().map(function(b){return '<option'+(b===cur?" selected":"")+'>'+esc(b)+'</option>'}).join("")}
+function table(cols,rows,fmt){if(!rows.length)return '<p class="muted">Nothing yet.</p>';return '<div class="wrap"><table><tr>'+cols.map(function(c){return "<th>"+esc(c)+"</th>"}).join("")+'</tr>'+rows.map(function(r){return "<tr>"+cols.map(function(c){return fmt&&fmt[c]?fmt[c](r[c],r):"<td>"+esc(r[c])+"</td>"}).join("")+"</tr>"}).join("")+'</table></div>'}
+var TABS=[["p","Players"],["t","Testers"],["m","Matches"],["g","Bugs"],["r","Results"],["f","Files"],["a","Access"],["v","Visits"],["o","Objectives"],["n","Pings"],["s","Releases"]];
+function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"?D.testers.filter(function(x){return x.Status==="requested"}).length:0;return '<button data-tab="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+(n?" ("+n+")":"")+'</button>'}).join("");
+ var h="";
+ if(TAB==="p")h=table(["player","builds","matches","wins","losses","minutes","bugs","points","trophies","perf","specs"],D.players.map(function(p){var x=Object.assign({},p);x.builds=p.builds.join(", ");x.trophies=(p.trophies||[]).join(", ");
+   var pf=p.lastPerf||{};x.perf=pf.avgFps?(pf.avgFps+" avg / "+(pf.low1Fps||"?")+" low"):"";x._slow=pf.avgFps&&(pf.avgFps<SLOW_AVG||pf.low1Fps<SLOW_LOW);x.specs=p.specs?[p.specs.gpu,p.specs.cpu,p.specs.ramGb?p.specs.ramGb+" GB":"",p.specs.resolution].filter(Boolean).join(" · "):"";return x}),
+   {perf:function(v,r){return '<td class="'+(r._slow?"slow":"")+'">'+esc(v)+'</td>'}});
+ if(TAB==="t")h='<div class="row"><input id="newsid" placeholder="Steam id 7656119…" size="22"><button id="addsid" class="ok">Approve id</button></div>'+table(["Name","Steam id","Status","Requested","Decided","Last seen","Note",""],D.testers.slice().reverse(),{
+   Name:function(v,r){return '<td><a target="_blank" rel="noopener" href="'+esc(r.Profile)+'">'+esc(v)+'</a></td>'},Status:function(v){return '<td class="'+esc(v)+'">'+esc(v)+'</td>'},
+   Requested:function(v){return "<td>"+day(v)+"</td>"},Decided:function(v){return "<td>"+day(v)+"</td>"},"Last seen":function(v){return "<td>"+day(v)+"</td>"},
+   "":function(v,r){return '<td><button class="ok" data-tester="'+esc(r["Steam id"])+'" data-st="approved">Approve</button> <button class="bad" data-tester="'+esc(r["Steam id"])+'" data-st="denied">Deny</button></td>'}});
+ if(TAB==="m")h=table(["Match id","Build","Started","Mode","Map","Minutes","Humans","AI","Result","Winner","How won","Reported by"],D.matches,{Started:function(v){return "<td>"+day(v)+"</td>"}});
+ if(TAB==="g")h=table(["Received","Bug id","Player","Build","Where","Report","Files","Status","Points",""],D.bugs.slice().reverse(),{Received:function(v){return "<td>"+day(v)+"</td>"},Report:function(v){return '<td class="pre">'+esc(v)+'</td>'},
+   Files:function(v){return '<td class="pre">'+String(v||"").split("\n").filter(String).map(function(u){return /^https?:/.test(u)?'<a target="_blank" rel="noopener" href="'+esc(u)+'">file</a>':esc(u)}).join("<br>")+'</td>'},
+   "":function(v,r){return '<td><select data-bug="'+esc(r["Bug id"])+'">'+["new","confirmed","fixed","rejected","duplicate","test"].map(function(s){return "<option"+(s===r.Status?" selected":"")+">"+s+"</option>"}).join("")+'</select></td>'}});
+ if(TAB==="r")h=table(["Received","Player","Build","Mode","Players","Won","Match minutes","Peak villagers","Minute to 20 villagers","Resources gathered","Out of sync"],D.results.slice().reverse(),{Received:function(v){return "<td>"+day(v)+"</td>"}});
+ if(TAB==="f")h=(D.storage!=="r2"?'<p class="muted">File storage (R2) is off: new uploads are not kept. Imported files still link to Google Drive.</p>':"")+table(["updated","build","matchId","player","name","bytes"],D.files.slice().reverse(),{updated:function(v){return "<td>"+day(v)+"</td>"},
+   name:function(v,r){return '<td>'+(r.download?'<a target="_blank" rel="noopener" href="'+esc(r.download)+'">'+esc(v)+'</a>':esc(v))+'</td>'},bytes:function(v){return "<td>"+Math.round(v/1024)+" KB</td>"}});
+ if(TAB==="a")h='<div class="row"><select id="atype"><option value="build">build</option><option value="tester">tester (Steam id)</option></select><input id="aval" placeholder="playtest-nov-4 or Steam id"><input id="anote" placeholder="Message shown (optional)" size="30"><button class="bad" id="ablock">Block</button><button class="ok" id="aallow">Allow</button></div>'
+   +table(["Type","Value","Blocked","Note","Changed",""],D.access,{Changed:function(v){return "<td>"+day(v)+"</td>"},"":function(v,r){var b=/^y/i.test(r.Blocked);return '<td><button data-acc="'+esc(r.Type)+'" data-val="'+esc(r.Value)+'" data-bl="'+(b?0:1)+'">'+(b?"Allow":"Block")+'</button></td>'}});
+ if(TAB==="v")h=table(["Time","Event","Build","Tester","Source","Visitor","Device","OS","Browser","Time zone","Referrer"],D.visits,{Time:function(v){return "<td>"+day(v)+"</td>"}});
+ if(TAB==="o")h=table(["id","title","description","feature","points","trophy","until","completedBy"],D.objectives)+'<p class="muted">Objectives are rows of the Objectives table (Id, Title, Description, Feature, Points, Trophy, Active from, Active until, Stat, Compare, Target, Repeatable).</p>';
+ if(TAB==="n")h='<p class="muted">E-mail is not set up on Cloudflare yet; these are the notifications that would have been sent.</p><div class="row">'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="'+(on?"ok":"")+'" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'" title="'+esc(s["What it means"])+'">'+esc(s.Event)+": "+(on?"on":"off")+'</button>'}).join("")+'</div>'+table(["Time","Event","Subject","Text"],D.pings,{Time:function(v){return "<td>"+day(v)+"</td>"},Text:function(v){return '<td class="pre">'+esc(v)+'</td>'}});
+ if(TAB==="s")h=table(["name","added","sizeMb","stored"],D.releases,{added:function(v){return "<td>"+day(v)+"</td>"}});
+ app.innerHTML=h}
+document.addEventListener("click",function(e){var t=e.target;
+ if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);render();return}
+ if(t.dataset.tester){op({op:"setTester",steamId:t.dataset.tester,status:t.dataset.st}).then(load);return}
+ if(t.dataset.acc){op({op:"setAccess",type:t.dataset.acc,value:t.dataset.val,blocked:t.dataset.bl==="1"}).then(load);return}
+ if(t.dataset.set){op({op:"setSetting",event:t.dataset.set,on:t.dataset.on==="1"}).then(load);return}
+ if(t.id==="addsid"){var v=document.getElementById("newsid").value.trim();if(v)op({op:"setTester",steamId:v,status:"approved"}).then(load);return}
+ if(t.id==="ablock"||t.id==="aallow"){var val=document.getElementById("aval").value.trim();if(val)op({op:"setAccess",type:document.getElementById("atype").value,value:val,blocked:t.id==="ablock",note:document.getElementById("anote").value}).then(load);return}
+ if(t.id==="reload"){load();return}
+ if(t.id==="out"){ls("ageadm",null);TOK=null;signIn();return}});
+document.addEventListener("change",function(e){var t=e.target;if(t.dataset.bug){op({op:"setBug",bugId:t.dataset.bug,status:t.value,points:t.value==="rejected"||t.value==="test"?0:undefined});return}if(t.id==="build")load()});
+function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
+ TAB=ls("agetab")||"p";TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
+ if(!TOK)return signIn();load()}
+if(API)start();else fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){API=String(c.api||"").replace(/\/+$/,"");start()}).catch(function(){app.innerHTML='<p>Could not read config.json.</p>'});
+})();
+</script></body></html>
