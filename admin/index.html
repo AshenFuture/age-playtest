@@ -70,7 +70,7 @@ function liveHtml(){if(!LV)return '<p class="muted">Loading…</p>';var h="",pu=
   h+='<div class="mc" data-open="'+esc(id)+'"><b>'+esc(m.Humans||m["Reported by"]||"?")+'</b>'+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'<div class="muted">'+esc([m.Map,m.Result,m.Minutes?m.Minutes+" min":"",m.Build].filter(Boolean).join(" · "))+' · '+day(m.Started)+'</div>'+(OPEN[id]?detail(m):"")+'</div>'})}
  h+='<h3 style="margin-top:22px;font-size:14px" class="muted">PHONE NOTIFICATIONS</h3>';
  if(!pu.topic)h+='<p class="muted">Not set up on the server (NTFY_TOPIC).</p>';
- else h+='<p>A notification when a tester starts a match: install the free <a target="_blank" rel="noopener" href="https://ntfy.sh/">ntfy</a> app, tap +, and subscribe to <a target="_blank" rel="noopener" href="'+esc(pu.topic)+'">'+esc(pu.topic.replace("https://ntfy.sh/",""))+'</a> (server ntfy.sh). Keep the topic name private.</p><div class="row"><button class="'+(pu.on?"ok":"")+'" data-set="match-start" data-on="'+(pu.on?0:1)+'">Match start: '+(pu.on?"on":"off")+'</button><button id="testpush">Send a test</button></div>';
+ else h+='<p>A notification when a tester starts a match: install the free <a target="_blank" rel="noopener" href="https://ntfy.sh/">ntfy</a> app, tap +, and subscribe to <a target="_blank" rel="noopener" href="'+esc(pu.topic)+'">'+esc(pu.topic.replace("https://ntfy.sh/",""))+'</a> (server ntfy.sh). Keep the topic name private.</p><div class="row"><a class="big" style="padding:8px 14px" href="'+esc(pu.topic.replace("https://","ntfy://"))+'">Subscribe in the ntfy app</a><button id="copytopic" data-t="'+esc(pu.topic.replace("https://ntfy.sh/",""))+'">Copy topic</button></div><div class="row"><button class="'+(pu.on?"ok":"")+'" data-set="match-start" data-on="'+(pu.on?0:1)+'">Match start: '+(pu.on?"on":"off")+'</button><button id="testpush">Send a test</button></div>';
  return h}
 function fillBuilds(){var s=document.getElementById("build"),cur=s.value,all={};D.builds.concat(D.releases.map(function(x){return x.name})).forEach(function(b){all[b]=1});
  s.innerHTML='<option value="">All builds</option>'+Object.keys(all).sort().map(function(b){return '<option'+(b===cur?" selected":"")+'>'+esc(b)+'</option>'}).join("")}
@@ -104,6 +104,7 @@ function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"&&D?D.te
  app.innerHTML=h}
 document.addEventListener("click",function(e){var t=e.target;
  if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);if(TAB==="l")loadLive();render();return}
+ if(t.id==="copytopic"){try{navigator.clipboard.writeText(t.dataset.t);t.textContent="Copied"}catch(x){prompt("Topic",t.dataset.t)}return}
  if(t.id==="testpush"){op({op:"testPush"}).then(function(r){if(r.ok)alert("Sent. It should show on your phone in a few seconds.")});return}
  var o=t.closest&&t.closest("[data-open]");if(o&&!(t.closest(".det"))&&!t.dataset.set){var k=o.dataset.open;OPEN[k]=!OPEN[k];render();return}
  if(t.dataset.tester){op({op:"setTester",steamId:t.dataset.tester,status:t.dataset.st}).then(load);return}
