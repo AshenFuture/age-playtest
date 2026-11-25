@@ -223,7 +223,8 @@ function bugCard(b){var st=b.Status||"new",md=bugMedia(b);
  if(md.length)h+='<div class="thumbs">'+md.map(function(f){return f.image&&f.url?'<img src="'+esc(f.url)+'" alt="" loading="lazy">':f.video?'<span class="vid">▶</span>':''}).join("")+'</div>';
  h+='</button>';
  if(st==="new")h+='<div class="btns"><button class="btn" data-bug="'+esc(b["Bug id"])+'" data-st="rejected">Reject</button><button class="btn" data-bug="'+esc(b["Bug id"])+'" data-st="duplicate">Duplicate</button><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="confirmed">Confirm</button></div>';
- else if(st==="confirmed")h+='<div class="btns"><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="fixed">Mark fixed</button></div>';
+ else if(st==="confirmed")h+='<div class="btns"><button class="btn" data-bug="'+esc(b["Bug id"])+'" data-st="rejected">Reject</button><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="fixed">Mark fixed</button></div>';
+ else if(st==="rejected"||st==="duplicate")h+='<div class="btns"><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="confirmed">Confirm</button></div>';
  return h+'</div>'}
 function bugRow(b){var st=b.Status||"new";return '<button class="row'+(HL===b["Bug id"]?" hl":"")+'" id="bug-'+esc(b["Bug id"])+'" data-det="bug" data-id="'+esc(b["Bug id"])+'"><div class="grow"><div class="nm">'+esc(bugTitle(b))+'</div><div class="sm">'+esc(join([b.Player,ago(b.Received)]))+'</div></div><span class="tag '+esc(st)+'">'+esc(st)+'</span>'+chev+'</button>'}
 function viewReports(){if(!D)return top("Reports","Loading…");var nb=newBugs(),h;
@@ -265,7 +266,7 @@ function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';i
   +'<div class="sm" style="margin-top:8px;white-space:normal">'+(pct>80?'<span class="slow">Nearly full. Above 10 GB, Cloudflare charges about $0.015 per GB a month.</span> ':'')+plural(ST.count||0,"file")+'. Nothing is deleted automatically.</div></div>'}
 var MORE=[["access","Access","Block a build or a tester",'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>'],
  ["releases","Releases","Builds testers can download",'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'],
- ["objectives","Objectives","Challenges, points and trophies",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
+ ["objectives","Challenges","Points, trophies, edit and switch off",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
  ["visits","Site visits","Who opened the playtest page",'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
  ["pings","E-mail log","E-mails that would have been sent",'<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>']];
 function moreSub(k){if(!D)return "";if(k==="access")return D.access.filter(function(a){return /^y/i.test(a.Blocked)}).length+" blocked";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000&&!/bot/.test(vKind(v))}).length+" this week (no bots)";return ""}
@@ -341,9 +342,25 @@ function detAccess(){var h=backBar("More")+'<div class="dh"><h1>Access</h1><div 
 var ATYPE="build";
 function detReleases(){var h=backBar("More")+'<div class="dh"><h1>Releases</h1></div>';
  return h+(D.releases.length?'<div class="list">'+D.releases.slice().reverse().map(function(r){return '<div class="acc"><div class="grow"><div class="nm">'+esc(r.name)+'</div><div class="sm">'+esc(join([r.sizeMb?r.sizeMb+" MB":"",r.stored==="r2"?"stored here":r.stored==="link"?"external link":"missing",day(r.added)]))+'</div></div><button class="btn" style="flex:none;min-height:38px" data-rel="'+esc(r.name)+'">Get link</button></div>'}).join("")+'</div>':'<div class="card empty">No builds yet.</div>')}
-function detObjectives(){var h=backBar("More")+'<div class="dh"><h1>Objectives</h1></div>';
- h+=D.objectives.length?D.objectives.map(function(o){return '<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><div class="nm" style="white-space:normal">'+esc(o.title)+'</div><span class="tag">'+esc(o.points)+' pts</span></div><div class="sm" style="white-space:normal;margin-top:4px">'+esc(o.description)+'</div><div class="sm" style="margin-top:6px">'+esc(join([o.trophy?"Trophy: "+o.trophy:"",o.until?"until "+day(o.until):"",o.feature]))+'</div>'+(o.completedBy&&o.completedBy.length?'<div class="chips" style="margin-top:8px">'+[].concat(o.completedBy).map(function(n){return '<span class="chip">'+esc(n)+'</span>'}).join("")+'</div>':"")+'</div>'}).join(""):'<div class="card empty">No active challenges.</div>';
- return h+'<p class="sm" style="white-space:normal;padding:4px">Challenges are rows of the Objectives table.</p>'}
+var OBJED=null;
+var OBJF=[["Id","Id","short-name"],["Title","Title",""],["Description","Description","What to do"],["Points","Points","10"],["Trophy","Trophy","blank = none"],
+ ["Builds","Builds","blank = career, 1 = Playtest 1.x"],["Stat","Stat","winVsAi >= 3"],["Compare","Compare",">="],["Target","Target","1"],
+ ["Repeatable","Repeatable","yes / no"],["MaxTimes","Max times","blank = no cap"],["Feature","Feature","words (bugs:feature)"],["Active from","Active from","2026-11-26"],["Active until","Active until",""]];
+function objOn(o){return !/^n/i.test(String(o.Enabled||""))}
+function objForm(o){o=o||{};return '<div class="card hl"><div class="nm" style="margin-bottom:8px">'+(o.Id?"Edit "+esc(o.Id):"New challenge")+'</div>'
+ +OBJF.map(function(f){return '<label class="sm" style="display:block;margin:8px 0 3px">'+esc(f[1])+'</label><input class="field" data-of="'+esc(f[0])+'" value="'+esc(o[f[0]]==null?"":o[f[0]])+'" placeholder="'+esc(f[2])+'">'}).join("")
+ +'<p class="sm" style="white-space:normal;margin-top:8px">Stat: a match stat (wardenWallsFormed, storeys, warHalls, peakVillagers, matchMinutes, winVsAi = AI level won against: Easy 1, Medium 2, Hard 3), parts joined with &amp;, terms added with +; totals sum:stat, max:stat, count:matches; bugs, bugs:feature (confirmed only); played:1, playtests:played, playtests:all.</p>'
+ +'<div class="btns"><button class="btn" data-act="objcancel">Cancel</button><button class="btn go" data-act="objsave">Save</button></div></div>'}
+function detObjectives(){var h=backBar("More")+'<div class="dh"><h1>Challenges</h1><div class="sub" style="margin-top:6px">Points and trophies for testers. Changes show on the boards at once.</div></div>';
+ var list=D.challenges||[];
+ h+=OBJED==="+"?objForm({Compare:">=",Target:1,Repeatable:"no"}):'<div class="btns" style="margin:0 0 12px"><button class="btn go" data-act="objnew">+ New challenge</button></div>';
+ h+=list.length?list.map(function(o){if(OBJED===o.Id)return objForm(o);var on=objOn(o);
+  return '<div class="card"'+(on?"":' style="opacity:.55"')+'><div style="display:flex;justify-content:space-between;gap:10px"><div class="nm" style="white-space:normal">'+esc(o.Title||o.Id)+'</div><span class="tag">'+esc(o.Points||0)+' pts</span></div>'
+  +'<div class="sm" style="white-space:normal;margin-top:4px">'+esc(o.Description||"")+'</div>'
+  +'<div class="sm" style="white-space:normal;margin-top:6px">'+esc(join([o._label||"Career",o._trophy?"Trophy: "+o._trophy:"",/^y/i.test(o.Repeatable)?"repeatable"+(o.MaxTimes?" ×"+o.MaxTimes:""):"",plural(o._done||0,"player")+" done",on?"":"OFF"]))+'</div>'
+  +'<div class="sm" style="white-space:normal;margin-top:4px;font-family:ui-monospace,monospace">'+esc(o.Stat||"")+(/[<>=]/.test(o.Stat||"")?"":" "+esc(o.Compare||">=")+" "+esc(o.Target==null?"":o.Target))+'</div>'
+  +'<div class="btns"><button class="btn" data-objon="'+esc(o.Id)+'" data-on="'+(on?"0":"1")+'">'+(on?"Turn off":"Turn on")+'</button><button class="btn" data-objed="'+esc(o.Id)+'">Edit</button><button class="btn no" data-objdel="'+esc(o.Id)+'">Delete</button></div></div>'}).join(""):'<div class="card empty">No challenges yet.</div>';
+ return h}
 // Visit kind: the server's guess (Kind column, from 2026-11-25); older rows get a guess from the user agent and clock.
 function vKind(v){if(v.Kind)return v.Kind;if(v.Tester)return "tester";var ua=v["User agent"]||"",m=/Chrome\/(\d+)/.exec(ua);
  if(/bot|crawl|spider|headless|lighthouse|preview|curl|python/i.test(ua)||(m&&+m[1]<120))return "bot";if(v["Time zone"]==="UTC")return "likely bot";return "person"}
@@ -380,7 +397,10 @@ document.addEventListener("click",function(e){var t=e.target.closest("button,a,[
  if(d.vall){VALL=!VALL;render();return}
  if(d.go){go(d.go,d.sub);return}
  if(d.sub&&!d.go){SUB=d.sub;render();return}
- if(d.bug){var b=D.bugs.filter(function(x){return x["Bug id"]===d.bug})[0];if(b)b.Status=d.st;render();op({op:"setBug",bugId:d.bug,status:d.st,points:d.st==="rejected"||d.st==="test"||d.st==="duplicate"?0:undefined}).then(function(r){if(r.ok)toast("Marked "+d.st+".")});return}
+ if(d.objed){OBJED=d.objed;render();return}
+ if(d.objon){op({op:"saveObjective",row:{Id:d.objon,Enabled:d.on==="1"?"":"no"}}).then(function(r){if(r.ok){D.challenges=r.challenges;toast(d.on==="1"?"Turned on.":"Turned off.");render()}});return}
+ if(d.objdel){if(!confirm("Delete the challenge "+d.objdel+"? Points and trophies from it go away."))return;op({op:"deleteObjective",id:d.objdel}).then(function(r){if(r.ok){D.challenges=r.challenges;toast("Deleted.");render()}});return}
+ if(d.bug){var b=D.bugs.filter(function(x){return x["Bug id"]===d.bug})[0],bp=b?Number(b.Points)||0:0;if(b)b.Status=d.st;render();op({op:"setBug",bugId:d.bug,status:d.st,points:d.st==="rejected"||d.st==="test"||d.st==="duplicate"?0:d.st==="confirmed"&&!bp?1:undefined}).then(function(r){if(r.ok)toast("Marked "+d.st+".")});return}
  if(d.tester){var tt=D.testers.filter(function(x){return x["Steam id"]===d.tester})[0];if(tt)tt.Status=d.st;render();op({op:"setTester",steamId:d.tester,status:d.st}).then(function(r){if(r.ok)toast(d.st==="approved"?"Approved.":"Denied.");load()});return}
  if(d.set){op({op:"setSetting",event:d.set,on:d.on==="1"}).then(function(){return Promise.all([loadLive(),load()])});return}
  if(d.acc){op({op:"setAccess",type:d.acc,value:d.val,blocked:d.bl==="1"}).then(load);return}
@@ -394,6 +414,10 @@ document.addEventListener("click",function(e){var t=e.target.closest("button,a,[
  var a=d.act;if(!a)return;
  if(a==="back"){history.length>1?history.back():(DET=null,render());return}
  if(a==="add"){ADD=!ADD;render();return}
+ if(a==="objnew"){OBJED="+";render();return}
+ if(a==="objcancel"){OBJED=null;render();return}
+ if(a==="objsave"){var row={};document.querySelectorAll("[data-of]").forEach(function(i){row[i.dataset.of]=i.value.trim()});var was=OBJED==="+"?"":OBJED;
+  op({op:"saveObjective",row:row,was:was||row.Id}).then(function(r){if(r.ok){D.challenges=r.challenges;OBJED=null;toast("Saved.");render()}});return}
  if(a==="newinv"){var lb=document.getElementById("invlabel").value.trim();op({op:"newInvite",label:lb}).then(function(r){if(r.ok){ADD=false;NEWINV={code:r.code,label:lb};load()}});return}
  if(a==="addsid"){var v=document.getElementById("newsid").value.trim();if(!/^7656119\d{10}$/.test(v))return toast("That isn't a Steam id. It starts with 7656119 and has 17 digits.");op({op:"setTester",steamId:v,status:"approved"}).then(function(r){if(r.ok){ADD=false;toast("Approved.");load()}});return}
  if(a==="ablock"||a==="aallow"){var val=document.getElementById("aval").value.trim();if(!val)return toast("Type a build or a Steam id first.");op({op:"setAccess",type:ATYPE,value:val,blocked:a==="ablock",note:document.getElementById("anote").value}).then(function(r){if(r.ok){toast(a==="ablock"?"Blocked.":"Allowed.");load()}});return}
