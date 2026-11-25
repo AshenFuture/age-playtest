@@ -17,6 +17,13 @@ td.pre{white-space:pre-wrap;max-width:520px}.muted{color:var(--muted)}.slow{colo
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;max-width:420px;margin:40px auto;text-align:center}
 .big{display:inline-block;padding:12px 22px;background:var(--acc);color:#04121a;border-radius:8px;font-weight:700;text-decoration:none}
 .row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.mc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;cursor:pointer}.mc:hover{border-color:var(--acc)}
+.mc h3{margin:0 0 4px;font-size:15px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chip{background:var(--line);border-radius:12px;padding:2px 9px;font-size:13px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.3}}
+.kv{display:grid;grid-template-columns:minmax(110px,auto) 1fr;gap:2px 12px;font-size:13px;margin:6px 0 10px}.kv div:nth-child(odd){color:var(--muted)}
+.det{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px;cursor:auto}.det h4{margin:10px 0 2px;font-size:13px;color:var(--acc)}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--panel)}
+@media (max-width:640px){header,nav,main{padding-left:10px;padding-right:10px}h1{font-size:14px}table{min-width:0}.hide-s{display:none}}
 </style></head><body>
 <header><h1>AGE PLAYTEST</h1><select id="build"><option value="">All builds</option></select><span id="me" class="muted"></span><span style="flex:1"></span><button id="reload">Reload</button><button id="out">Sign out</button></header>
 <nav id="tabs"></nav><main id="app"><p class="muted">Loading…</p></main>
@@ -24,7 +31,7 @@ td.pre{white-space:pre-wrap;max-width:520px}.muted{color:var(--muted)}.slow{colo
 <script>
 (function(){
 var SLOW_AVG=40,SLOW_LOW=20;
-var app=document.getElementById("app"),tabsEl=document.getElementById("tabs"),D=null,TAB="p",API=window.AGE_API||"",TOK=null;
+var app=document.getElementById("app"),tabsEl=document.getElementById("tabs"),D=null,LV=null,OPEN={},TAB="l",API=window.AGE_API||"",TOK=null,TIMER=null;
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
 function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?esc(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
@@ -32,14 +39,47 @@ function signIn(msg){var site=!window.AGE_API;app.innerHTML='<div class="card"><
 function call(method,q,body){var o={method:method,headers:{Authorization:"Bearer "+TOK}};if(body){o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
  return fetch(API+"/?"+q,o).then(function(r){return r.json()})}
 function op(o){o.kind="admin";return call("POST","",o).then(function(r){if(!r.ok)alert(r.error||"failed");return r})}
-function load(){app.innerHTML='<p class="muted">Loading…</p>';var b=document.getElementById("build").value;
- call("GET","action=admin"+(b?"&build="+encodeURIComponent(b):"")).then(function(r){if(!r.ok){ls("ageadm",null);TOK=null;return signIn("Session ended. Sign in again.")}D=r;fillBuilds();render()}).catch(function(e){app.innerHTML='<p class="bad">'+esc(e.message||e)+'</p>'})}
+function ended(){ls("ageadm",null);TOK=null;clearInterval(TIMER);signIn("Session ended. Sign in again.")}
+function load(){app.innerHTML='<p class="muted">Loading…</p>';var b=document.getElementById("build").value;loadLive();
+ call("GET","action=admin"+(b?"&build="+encodeURIComponent(b):"")).then(function(r){if(!r.ok)return ended();D=r;fillBuilds();render()}).catch(function(e){app.innerHTML='<p class="bad">'+esc(e.message||e)+'</p>'})}
+// The Live tab polls a small view every 10 s while it is open and the page is visible.
+function loadLive(){if(!TOK)return;call("GET","action=admin&view=live").then(function(r){if(!r.ok)return ended();LV=r;if(TAB==="l")render()}).catch(function(){})}
+function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<90?Math.round(s)+" s ago":s<5400?Math.round(s/60)+" min ago":day(d)}
+function clock(sec){sec=Number(sec)||0;var m=Math.floor(sec/60),h=Math.floor(m/60);return h?h+":"+String(m%60).padStart(2,"0")+":"+String(sec%60).padStart(2,"0"):m+":"+String(sec%60).padStart(2,"0")}
+function kv(o){var k=Object.keys(o||{}).filter(function(x){return x!=="shared"});if(!k.length)return '<p class="muted">None sent.</p>';return '<div class="kv">'+k.map(function(x){var v=o[x];return "<div>"+esc(x)+"</div><div>"+esc(typeof v==="object"?JSON.stringify(v):v)+"</div>"}).join("")+'</div>'}
+function pname(p){return p.ai?"AI "+(p.difficulty||"")+(p.race?" "+p.race:""):p.name}
+function detail(m){var h='<div class="det">';
+ h+='<div class="kv"><div>Match id</div><div>'+esc(m["Match id"])+'</div><div>Build</div><div>'+esc(m.Build)+'</div><div>Mode</div><div>'+esc(m.Mode)+'</div><div>Map</div><div>'+esc(m.Map)+(m["Map size"]?" ("+esc(m["Map size"])+")":"")+'</div><div>Seed</div><div>'+esc(m.Seed)+'</div><div>Started</div><div>'+day(m.Started)+'</div>'+(m.Ended?'<div>Ended</div><div>'+day(m.Ended)+" · "+esc(m.Minutes)+' min</div><div>Result</div><div>'+esc(m.Result)+(m.Winner?" · "+esc(m.Winner):"")+(m["How won"]?" ("+esc(m["How won"])+")":"")+'</div>':"")+'</div>';
+ h+='<h4>Players</h4>'+table(["player","team","colour","result","killed","lost","built","gathered"],(m.players||[]).map(function(p){var s=p.stats||{};return {player:pname(p),team:p.team,colour:p.colour,result:p.result,killed:s.unitsKilled,lost:s.unitsLost,built:s.buildingsBuilt,gathered:s.resourcesGathered}}));
+ h+='<h4>Match settings</h4>'+kv(m.settings);
+ Object.keys(m.reports||{}).forEach(function(n){var r=m.reports[n]||{},pf=r.perf||{};h+='<h4>'+esc(n)+': settings</h4>'+kv(r.settings);
+  if(r.settingChanges&&r.settingChanges.length)h+='<div class="muted">Changed: '+r.settingChanges.map(function(c){return esc(c.t+" "+c.what)}).join(" · ")+'</div>';
+  if(pf.avgFps)h+='<div class="muted">'+esc(pf.avgFps)+' fps avg, '+esc(pf.low1Fps)+' 1% low</div>';
+  if(r.specs&&r.specs.gpu)h+='<div class="muted">'+esc([r.specs.gpu,r.specs.cpu,r.specs.ramGb?r.specs.ramGb+" GB":"",r.specs.resolution,r.specs.preset].filter(Boolean).join(" · "))+'</div>'});
+ return h+'</div>'}
+function liveHtml(){if(!LV)return '<p class="muted">Loading…</p>';var h="",pu=LV.push||{};
+ h+='<div class="row"><span class="muted">Updates every 10 s · '+LV.matches.length+' match'+(LV.matches.length===1?"":"es")+' running</span></div>';
+ if(!LV.matches.length)h+='<p class="muted">Nobody is in a match right now.</p>';
+ LV.matches.forEach(function(m){var id=m["Match id"],secs=Math.max.apply(null,m.live.map(function(r){return Number(r["Game seconds"])||0}).concat([0]));
+  var ai=(m.players||[]).filter(function(p){return p.ai});
+  h+='<div class="mc" data-open="'+esc(id)+'"><h3><span class="dot"></span>'+esc(m.live.map(function(r){return r.Player}).join(", "))+(ai.length?' <span class="muted">vs '+ai.length+' AI</span>':"")+'</h3>'
+   +'<div class="muted">'+esc([m.Map,m.Mode,m.Build||m.live[0].Build].filter(Boolean).join(" · "))+' · game time '+clock(secs)+' · started '+ago(m.live[0].Started)+'</div><div class="chips">'
+   +m.live.map(function(r){return '<span class="chip">'+esc(r.Player)+(r.Villagers!=null&&r.Villagers!==""?" · "+esc(r.Villagers)+" vil":"")+(r.Military?" · "+esc(r.Military)+" mil":"")+(Number(r.Out)?" · out":"")+'</span>'}).join("")
+   +ai.map(function(p){return '<span class="chip muted">'+esc(pname(p))+'</span>'}).join("")+'</div>'+(OPEN[id]?detail(m):"")+'</div>'});
+ if(LV.recent&&LV.recent.length){h+='<h3 style="margin-top:22px;font-size:14px" class="muted">RECENT</h3>';LV.recent.forEach(function(m){var id=m["Match id"];
+  h+='<div class="mc" data-open="'+esc(id)+'"><b>'+esc(m.Humans||m["Reported by"]||"?")+'</b>'+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'<div class="muted">'+esc([m.Map,m.Result,m.Minutes?m.Minutes+" min":"",m.Build].filter(Boolean).join(" · "))+' · '+day(m.Started)+'</div>'+(OPEN[id]?detail(m):"")+'</div>'})}
+ h+='<h3 style="margin-top:22px;font-size:14px" class="muted">PHONE NOTIFICATIONS</h3>';
+ if(!pu.topic)h+='<p class="muted">Not set up on the server (NTFY_TOPIC).</p>';
+ else h+='<p>A notification when a tester starts a match: install the free <a target="_blank" rel="noopener" href="https://ntfy.sh/">ntfy</a> app, tap +, and subscribe to <a target="_blank" rel="noopener" href="'+esc(pu.topic)+'">'+esc(pu.topic.replace("https://ntfy.sh/",""))+'</a> (server ntfy.sh). Keep the topic name private.</p><div class="row"><button class="'+(pu.on?"ok":"")+'" data-set="match-start" data-on="'+(pu.on?0:1)+'">Match start: '+(pu.on?"on":"off")+'</button><button id="testpush">Send a test</button></div>';
+ return h}
 function fillBuilds(){var s=document.getElementById("build"),cur=s.value,all={};D.builds.concat(D.releases.map(function(x){return x.name})).forEach(function(b){all[b]=1});
  s.innerHTML='<option value="">All builds</option>'+Object.keys(all).sort().map(function(b){return '<option'+(b===cur?" selected":"")+'>'+esc(b)+'</option>'}).join("")}
 function table(cols,rows,fmt){if(!rows.length)return '<p class="muted">Nothing yet.</p>';return '<div class="wrap"><table><tr>'+cols.map(function(c){return "<th>"+esc(c)+"</th>"}).join("")+'</tr>'+rows.map(function(r){return "<tr>"+cols.map(function(c){return fmt&&fmt[c]?fmt[c](r[c],r):"<td>"+esc(r[c])+"</td>"}).join("")+"</tr>"}).join("")+'</table></div>'}
-var TABS=[["p","Players"],["t","Testers"],["m","Matches"],["g","Bugs"],["r","Results"],["f","Files"],["a","Access"],["v","Visits"],["o","Objectives"],["n","Pings"],["s","Releases"]];
-function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"?D.testers.filter(function(x){return x.Status==="requested"}).length:0;return '<button data-tab="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+(n?" ("+n+")":"")+'</button>'}).join("");
+var TABS=[["l","Live"],["p","Players"],["t","Testers"],["m","History"],["g","Bugs"],["r","Results"],["f","Files"],["a","Access"],["v","Visits"],["o","Objectives"],["n","Pings"],["s","Releases"]];
+function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"&&D?D.testers.filter(function(x){return x.Status==="requested"}).length:t[0]==="l"&&LV?LV.matches.length:0;return '<button data-tab="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+(n?" ("+n+")":"")+'</button>'}).join("");
  var h="";
+ if(TAB==="l"){app.innerHTML=liveHtml();return}
+ if(!D){app.innerHTML='<p class="muted">Loading…</p>';return}
  if(TAB==="p")h=table(["player","builds","matches","wins","losses","minutes","bugs","points","trophies","perf","specs"],D.players.map(function(p){var x=Object.assign({},p);x.builds=p.builds.join(", ");x.trophies=(p.trophies||[]).join(", ");
    var pf=p.lastPerf||{};x.perf=pf.avgFps?(pf.avgFps+" avg / "+(pf.low1Fps||"?")+" low"):"";x._slow=pf.avgFps&&(pf.avgFps<SLOW_AVG||pf.low1Fps<SLOW_LOW);x.specs=p.specs?[p.specs.gpu,p.specs.cpu,p.specs.ramGb?p.specs.ramGb+" GB":"",p.specs.resolution].filter(Boolean).join(" · "):"";return x}),
    {perf:function(v,r){return '<td class="'+(r._slow?"slow":"")+'">'+esc(v)+'</td>'}});
@@ -47,7 +87,8 @@ function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"?D.teste
    Name:function(v,r){return '<td><a target="_blank" rel="noopener" href="'+esc(r.Profile)+'">'+esc(v)+'</a></td>'},Status:function(v){return '<td class="'+esc(v)+'">'+esc(v)+'</td>'},
    Requested:function(v){return "<td>"+day(v)+"</td>"},Decided:function(v){return "<td>"+day(v)+"</td>"},"Last seen":function(v){return "<td>"+day(v)+"</td>"},
    "":function(v,r){return '<td><button class="ok" data-tester="'+esc(r["Steam id"])+'" data-st="approved">Approve</button> <button class="bad" data-tester="'+esc(r["Steam id"])+'" data-st="denied">Deny</button></td>'}});
- if(TAB==="m")h=table(["Match id","Build","Started","Mode","Map","Minutes","Humans","AI","Result","Winner","How won","Reported by"],D.matches,{Started:function(v){return "<td>"+day(v)+"</td>"}});
+ if(TAB==="m")h=D.matches.length?'<p class="muted">Tap a match for its players and settings.</p><div class="wrap"><table><tr><th>Started</th><th>Players</th><th>Map</th><th>Min</th><th>Result</th><th class="hide-s">Build</th><th class="hide-s">Mode</th></tr>'+D.matches.map(function(m){var id=m["Match id"];
+   return '<tr class="click" data-open="'+esc(id)+'"><td>'+day(m.Started)+'</td><td>'+esc(m.Humans)+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'</td><td>'+esc(m.Map)+'</td><td>'+esc(m.Minutes)+'</td><td>'+esc(m.Result)+'</td><td class="hide-s">'+esc(m.Build)+'</td><td class="hide-s">'+esc(m.Mode)+'</td></tr>'+(OPEN[id]?'<tr><td colspan="7">'+detail(m)+'</td></tr>':"")}).join("")+'</table></div>':'<p class="muted">Nothing yet.</p>';
  if(TAB==="g")h=table(["Received","Bug id","Player","Build","Where","Report","Files","Status","Points",""],D.bugs.slice().reverse(),{Received:function(v){return "<td>"+day(v)+"</td>"},Report:function(v){return '<td class="pre">'+esc(v)+'</td>'},
    Files:function(v){return '<td class="pre">'+String(v||"").split("\n").filter(String).map(function(u){return /^https?:/.test(u)?'<a target="_blank" rel="noopener" href="'+esc(u)+'">file</a>':esc(u)}).join("<br>")+'</td>'},
    "":function(v,r){return '<td><select data-bug="'+esc(r["Bug id"])+'">'+["new","confirmed","fixed","rejected","duplicate","test"].map(function(s){return "<option"+(s===r.Status?" selected":"")+">"+s+"</option>"}).join("")+'</select></td>'}});
@@ -62,18 +103,21 @@ function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"?D.teste
  if(TAB==="s")h=table(["name","added","sizeMb","stored"],D.releases,{added:function(v){return "<td>"+day(v)+"</td>"}});
  app.innerHTML=h}
 document.addEventListener("click",function(e){var t=e.target;
- if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);render();return}
+ if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);if(TAB==="l")loadLive();render();return}
+ if(t.id==="testpush"){op({op:"testPush"}).then(function(r){if(r.ok)alert("Sent. It should show on your phone in a few seconds.")});return}
+ var o=t.closest&&t.closest("[data-open]");if(o&&!(t.closest(".det"))&&!t.dataset.set){var k=o.dataset.open;OPEN[k]=!OPEN[k];render();return}
  if(t.dataset.tester){op({op:"setTester",steamId:t.dataset.tester,status:t.dataset.st}).then(load);return}
  if(t.dataset.acc){op({op:"setAccess",type:t.dataset.acc,value:t.dataset.val,blocked:t.dataset.bl==="1"}).then(load);return}
- if(t.dataset.set){op({op:"setSetting",event:t.dataset.set,on:t.dataset.on==="1"}).then(load);return}
+ if(t.dataset.set){op({op:"setSetting",event:t.dataset.set,on:t.dataset.on==="1"}).then(TAB==="l"?loadLive:load);return}
  if(t.id==="addsid"){var v=document.getElementById("newsid").value.trim();if(v)op({op:"setTester",steamId:v,status:"approved"}).then(load);return}
  if(t.id==="ablock"||t.id==="aallow"){var val=document.getElementById("aval").value.trim();if(val)op({op:"setAccess",type:document.getElementById("atype").value,value:val,blocked:t.id==="ablock",note:document.getElementById("anote").value}).then(load);return}
- if(t.id==="reload"){load();return}
+ if(t.id==="reload"){TAB==="l"?loadLive():load();return}
  if(t.id==="out"){ls("ageadm",null);TOK=null;signIn();return}});
 document.addEventListener("change",function(e){var t=e.target;if(t.dataset.bug){op({op:"setBug",bugId:t.dataset.bug,status:t.value,points:t.value==="rejected"||t.value==="test"?0:undefined});return}if(t.id==="build")load()});
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
- TAB=ls("agetab")||"p";TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
- if(!TOK)return signIn();load()}
+ TAB=location.hash==="#live"?"l":(ls("agetab")||"l");TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
+ if(!TOK)return signIn();load();clearInterval(TIMER);TIMER=setInterval(function(){if(TAB==="l"&&!document.hidden)loadLive()},10000);
+ document.addEventListener("visibilitychange",function(){if(!document.hidden&&TAB==="l")loadLive()})}
 function pickApi(def){return fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){var l=[c.api,c.fallback].filter(Boolean);function t(i){if(i>=l.length)return def;var u=String(l[i]).replace(/\/+$/,"");return fetch(u+"/?action=ping",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){return j&&"ok" in j?u:t(i+1)},function(){return t(i+1)})}return t(0)},function(){return def})}
 if(API)start();else pickApi("").then(function(u){API=u;if(!u){app.innerHTML="<p>Could not reach the playtest server.</p>";return}start()});
 })();
