@@ -259,7 +259,7 @@ var MORE=[["access","Access","Block a build or a tester",'<rect x="5" y="10" wid
  ["objectives","Objectives","Challenges, points and trophies",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
  ["visits","Site visits","Who opened the playtest page",'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
  ["pings","E-mail log","E-mails that would have been sent",'<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>']];
-function moreSub(k){if(!D)return "";if(k==="access")return D.access.filter(function(a){return /^y/i.test(a.Blocked)}).length+" blocked";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000}).length+" this week";return ""}
+function moreSub(k){if(!D)return "";if(k==="access")return D.access.filter(function(a){return /^y/i.test(a.Blocked)}).length+" blocked";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000&&!/bot/.test(vKind(v))}).length+" this week (no bots)";return ""}
 function viewMore(){var h=top("More","Signed in with Steam");
  h+='<h2>Phone notifications</h2><div id="pushbox">'+pushHtml()+'</div>';
  h+='<h2>Storage</h2>'+storageHtml();
@@ -332,8 +332,16 @@ function detReleases(){var h=backBar("More")+'<div class="dh"><h1>Releases</h1><
 function detObjectives(){var h=backBar("More")+'<div class="dh"><h1>Objectives</h1></div>';
  h+=D.objectives.length?D.objectives.map(function(o){return '<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><div class="nm" style="white-space:normal">'+esc(o.title)+'</div><span class="tag">'+esc(o.points)+' pts</span></div><div class="sm" style="white-space:normal;margin-top:4px">'+esc(o.description)+'</div><div class="sm" style="margin-top:6px">'+esc(join([o.trophy?"Trophy: "+o.trophy:"",o.until?"until "+day(o.until):"",o.feature]))+'</div>'+(o.completedBy&&o.completedBy.length?'<div class="chips" style="margin-top:8px">'+[].concat(o.completedBy).map(function(n){return '<span class="chip">'+esc(n)+'</span>'}).join("")+'</div>':"")+'</div>'}).join(""):'<div class="card empty">No active challenges.</div>';
  return h+'<p class="sm" style="white-space:normal;padding:4px">Challenges are rows of the Objectives table.</p>'}
-function detVisits(){var h=backBar("More")+'<div class="dh"><h1>Site visits</h1><div class="sub">Last '+D.visits.length+'</div></div>';
- return h+(D.visits.length?'<div class="list">'+D.visits.slice(0,300).map(function(v){return '<div class="row"><div class="grow"><div class="nm">'+esc(v.Tester||v.Event)+(v.Tester?' <span class="dim">'+esc(v.Event)+'</span>':"")+'</div><div class="sm">'+esc(join([v.Device,v.OS,v.Browser,v["Time zone"],v.Build]))+'</div></div><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">No visits yet.</div>')}
+// Visit kind: the server's guess (Kind column, from 2026-11-25); older rows get a guess from the user agent and clock.
+function vKind(v){if(v.Kind)return v.Kind;if(v.Tester)return "tester";var ua=v["User agent"]||"",m=/Chrome\/(\d+)/.exec(ua);
+ if(/bot|crawl|spider|headless|lighthouse|preview|curl|python/i.test(ua)||(m&&+m[1]<120))return "bot";if(v["Time zone"]==="UTC")return "likely bot";return "person"}
+var VALL=false;
+function detVisits(){var by={},vs=D.visits.map(function(v){var k=vKind(v);by[k]=(by[k]||0)+1;return [v,k]});
+ var shown=VALL?vs:vs.filter(function(x){return !/bot/.test(x[1])}),hid=vs.length-shown.length;
+ var h=backBar("More")+'<div class="dh"><h1>Site visits</h1><div class="sub">Last '+vs.length+': '+esc(Object.keys(by).map(function(k){return by[k]+" "+k}).join(", "))+'</div></div>';
+ h+='<div style="display:flex;gap:8px;margin:0 0 10px"><button class="pill" data-vall="1">'+(VALL?"Hide bots":"Show bots too ("+hid+")")+'</button></div>';
+ return h+(shown.length?'<div class="list">'+shown.slice(0,300).map(function(x){var v=x[0],k=x[1];
+  return '<div class="row"><div class="grow"><div class="nm">'+esc(v.Tester||v.Event)+(v.Tester?' <span class="dim">'+esc(v.Event)+'</span>':"")+'</div><div class="sm">'+esc(join([v.Country,v.Network,v.Device,v.OS,v.Browser,v["Time zone"],v.Page,v.Build]))+'</div>'+(v.Why||v.Referrer?'<div class="sm dim">'+esc(join([v.Why,v.Referrer?"from "+v.Referrer:"",v["IP hash"]?"ip "+v["IP hash"]:""]))+'</div>':"")+'</div><span class="tag'+(k==="person"||k==="tester"?" approved":"")+'">'+esc(k)+'</span><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">'+(hid?"Only bots so far.":"No visits yet.")+'</div>')}
 function detPings(){var h=backBar("More")+'<div class="dh"><h1>E-mail log</h1><div class="sub" style="white-space:normal">E-mail isn\'t set up yet. These are the e-mails that would have gone out.</div></div>';
  h+='<details class="card"><summary><span>Which e-mails to log</span></summary><div>'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="acc" style="padding-left:0;padding-right:0" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'"><div class="grow"><div>'+esc(s.Event)+'</div><div class="sm" style="white-space:normal">'+esc(s["What it means"])+'</div></div>'+tog(on,"")+'</button>'}).join("")+'</div></details>';
  return h+(D.pings.length?D.pings.map(function(p){return '<div class="card"><div class="nm" style="white-space:normal">'+esc(String(p.Subject||"").replace(/^\[Age\] /,""))+'</div><div class="sm">'+esc(join([p.Event,ago(p.Time)]))+'</div><div class="txt sm" style="white-space:pre-wrap">'+esc(p.Text)+'</div></div>'}).join(""):'<div class="card empty">Nothing logged yet.</div>')}
@@ -357,6 +365,7 @@ window.addEventListener("popstate",function(e){DET=e.state&&e.state.det||null;re
 // ---------- events ----------
 document.addEventListener("click",function(e){var t=e.target.closest("button,a,[data-det]");if(!t)return;var d=t.dataset;
  if(d.tab){go(d.tab);return}
+ if(d.vall){VALL=!VALL;render();return}
  if(d.go){go(d.go,d.sub);return}
  if(d.sub&&!d.go){SUB=d.sub;render();return}
  if(d.bug){var b=D.bugs.filter(function(x){return x["Bug id"]===d.bug})[0];if(b)b.Status=d.st;render();op({op:"setBug",bugId:d.bug,status:d.st,points:d.st==="rejected"||d.st==="test"||d.st==="duplicate"?0:undefined}).then(function(r){if(r.ok)toast("Marked "+d.st+".")});return}

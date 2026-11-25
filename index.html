@@ -96,7 +96,7 @@ function toast(t){var e=document.getElementById("toast");e.textContent=t;e.style
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function vid(){var v=load("agevid");if(!v){v=Math.random().toString(36).slice(2,10);store("agevid",v)}return v}
-function meta(){return {visitor:vid(),ua:navigator.userAgent,lang:navigator.language,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||""),screen:screen.width+"x"+screen.height,ref:document.referrer,src:C.src||"site"}}
+function meta(){return {visitor:vid(),ua:navigator.userAgent,lang:navigator.language,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||""),screen:screen.width+"x"+screen.height,ref:document.referrer,src:C.src||"site",path:location.pathname,wd:navigator.webdriver?"1":""}}
 function api(op,p){p=Object.assign({op:op},meta(),p||{});if(TOK)p.token=TOK;
  if(C.mode==="gas")return new Promise(function(res,rej){google.script.run.withSuccessHandler(res).withFailureHandler(rej).siteApi(p)});
  var q=new URLSearchParams(p);q.set("action","site");return fetch(C.api+(/\/api$/.test(C.api)?"/?":"?")+q.toString()).then(function(r){return r.json()})}
