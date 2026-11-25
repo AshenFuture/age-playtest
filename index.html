@@ -99,7 +99,7 @@ function vid(){var v=load("agevid");if(!v){v=Math.random().toString(36).slice(2,
 function meta(){return {visitor:vid(),ua:navigator.userAgent,lang:navigator.language,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||""),screen:screen.width+"x"+screen.height,ref:document.referrer,src:C.src||"site"}}
 function api(op,p){p=Object.assign({op:op},meta(),p||{});if(TOK)p.token=TOK;
  if(C.mode==="gas")return new Promise(function(res,rej){google.script.run.withSuccessHandler(res).withFailureHandler(rej).siteApi(p)});
- var q=new URLSearchParams(p);q.set("action","site");return fetch(C.api+"?"+q.toString()).then(function(r){return r.json()})}
+ var q=new URLSearchParams(p);q.set("action","site");return fetch(C.api+(/\/api$/.test(C.api)?"/?":"?")+q.toString()).then(function(r){return r.json()})}
 function selfUrl(){return C.mode==="gas"?C.self:location.origin+location.pathname}
 function steamUrl(){var rt=selfUrl()+(C.mode==="gas"?"?page=download":""),realm=C.mode==="gas"?"https://script.google.com":location.origin;
  var q={"openid.ns":"http://specs.openid.net/auth/2.0","openid.mode":"checkid_setup","openid.return_to":rt,"openid.realm":realm,"openid.identity":"http://specs.openid.net/auth/2.0/identifier_select","openid.claimed_id":"http://specs.openid.net/auth/2.0/identifier_select"};
