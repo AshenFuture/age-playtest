@@ -247,7 +247,7 @@ function pushHtml(){var pu=(LV&&LV.push)||{},h="";
  else h+='<div class="acc"><span class="sm">Not on for this device</span><button style="color:var(--cyan);font-weight:600" data-act="pushon">Turn on</button></div>';
  h+='</div><div class="sm" style="padding:0 4px">'+plural(pu.devices||0,"device")+' signed up.'+(PUSHMSG?" "+esc(PUSHMSG):"")+'</div>';
  return h}
-function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';if(!ST.ok)return '<div class="card sm">'+esc(ST.error||"Storage is off.")+'</div>';
+function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';if(!ST.ok||ST.bytes==null)return '<div class="card sm">'+esc(ST.error||"The storage meter needs the server update.")+'</div>';
  var cap=FREE_GB*1073741824,p=ST.parts||{},vid=ST.videos||0,parts=[["Bug videos",vid,"#c79bff"],["Screenshots and logs",Math.max(0,(p.uploads||0)-vid),"#5FD4FF"],["Builds",p.builds||0,"#FFD21A"],["Other",p.other||0,"#9AA3AB"]].filter(function(x){return x[1]>0});
  var pct=Math.min(100,ST.bytes/cap*100);
  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="big">'+kb(ST.bytes)+'</span><span class="sm">of '+FREE_GB+' GB free</span></div>'
