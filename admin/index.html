@@ -1,92 +1,391 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
-<title>Age playtesters</title>
+<title>Dark Oasis Admin</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dark Oasis Admin"><meta name="theme-color" content="#0b1016">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Oasis Admin"><meta name="theme-color" content="#060708">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b1016;--panel:#121a23;--line:#24323f;--text:#e4edf3;--muted:#8aa0b0;--acc:#5fd4ff;--ok:#7fdc7f;--bad:#ff7a7a;--warn:#e0c070}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
-header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
-h1{font-size:16px;letter-spacing:.2em;margin:0 12px 0 0;color:var(--acc)}
-select,button,input{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
-button{cursor:pointer}button:hover{border-color:var(--acc)}button.ok{border-color:#3d7a3d}button.bad{border-color:#8a3a3a}
-nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px}nav button.on{background:var(--acc);color:#04121a;border-color:var(--acc)}
-main{padding:8px 16px 40px}.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:600px}
-th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--bg)}
-td.pre{white-space:pre-wrap;max-width:520px}.muted{color:var(--muted)}.slow{color:var(--warn)}.tag{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--line);font-size:12px}
-.approved{color:var(--ok)}.denied{color:var(--bad)}.requested{color:var(--warn)}a{color:var(--acc)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;max-width:420px;margin:40px auto;text-align:center}
-.big{display:inline-block;padding:12px 22px;background:var(--acc);color:#04121a;border-radius:8px;font-weight:700;text-decoration:none}
-.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.mc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;cursor:pointer}.mc:hover{border-color:var(--acc)}
-.mc h3{margin:0 0 4px;font-size:15px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chip{background:var(--line);border-radius:12px;padding:2px 9px;font-size:13px}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.3}}
-.kv{display:grid;grid-template-columns:minmax(110px,auto) 1fr;gap:2px 12px;font-size:13px;margin:6px 0 10px}.kv div:nth-child(odd){color:var(--muted)}
-.det{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px;cursor:auto}.det h4{margin:10px 0 2px;font-size:13px;color:var(--acc)}
-tr.click{cursor:pointer}tr.click:hover td{background:var(--panel)}
-@media (max-width:640px){header,nav,main{padding-left:10px;padding-right:10px}h1{font-size:14px}table{min-width:0}.hide-s{display:none}}
+:root{--bg:#060708;--panel:#0d1013;--raise:#14181c;--line:#1e252b;--text:#EEF0F2;--dim:#9AA3AB;--faint:#5E666E;--cyan:#5FD4FF;--gold:#FFD21A;--gold-a:rgba(255,210,26,.12);--gold-l:rgba(255,210,26,.38);--red:#ff7a7a;--green:#7fdc9a;
+ --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--disp:Rajdhani,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}body{background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;min-height:100vh;overscroll-behavior-y:contain}
+a{color:var(--cyan);text-decoration:none}
+button,select,input{font:inherit;color:var(--text)}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#app{max-width:560px;margin:0 auto;padding:calc(var(--st) + 14px) 14px calc(var(--sb) + 100px)}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:4px 4px 12px}
+.top h1{font:700 32px/1 var(--disp)}
+.sub{color:var(--dim);font-size:13px;margin-top:4px}
+.pill{font:600 13px system-ui;color:var(--dim);border:1px solid var(--line);border-radius:18px;padding:7px 12px;background:var(--panel);min-height:36px;flex:none}
+select.pill{appearance:none;-webkit-appearance:none;padding-right:26px;max-width:170px;background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%239AA3AB'/%3E%3C/svg%3E") no-repeat right 11px center}
+.ptr{height:0;overflow:hidden;display:flex;justify-content:center;align-items:center;gap:8px;color:var(--faint);font-size:12px;transition:height .15s}
+.ptr i{width:14px;height:14px;border:2px solid var(--faint);border-top-color:var(--cyan);border-radius:50%}
+.ptr.spin i{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+h2{font:700 17px var(--disp);color:var(--dim);margin:20px 4px 8px;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{font:500 13px system-ui;color:var(--faint)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.live{border-color:rgba(95,212,255,.35);background:linear-gradient(180deg,rgba(95,212,255,.07),var(--panel) 60%);display:block;width:100%;text-align:left}
+.lh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.who{font:700 20px/1.15 var(--disp)}
+.clock{font:700 26px/1 var(--disp);color:var(--cyan);font-variant-numeric:tabular-nums}
+.meta{color:var(--dim);font-size:13px;margin-top:3px}
+.beat{display:block;width:100%;height:26px;margin:10px 0 8px}
+.beat path.p{stroke-dasharray:40 400;animation:beat 2.4s linear infinite}@keyframes beat{from{stroke-dashoffset:440}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.beat path.p{animation:none;stroke-dasharray:none}.ptr.spin i{animation:none}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font-size:13px}
+.chip b{font:700 15px var(--disp)}.chip.ai{color:var(--dim)}
+.att{display:flex;gap:10px}
+.att button{flex:1;text-align:left;border:1px solid var(--gold-l);background:var(--gold-a);border-radius:16px;padding:12px 14px}
+.att .n{font:700 32px/1 var(--disp);color:var(--gold)}.att .t{font-size:13px;margin-top:4px}
+.att button.zero{border-color:var(--line);background:var(--panel)}.att button.zero .n{color:var(--faint)}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);width:100%;text-align:left;min-height:56px}
+.row:last-child{border-bottom:0}a.row{color:var(--text)}
+.av{width:38px;height:38px;border-radius:12px;background:var(--raise);display:flex;align-items:center;justify-content:center;font:700 17px var(--disp);color:var(--cyan);flex:none}
+.grow{flex:1;min-width:0}.nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sm{font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chev{color:var(--faint);font-size:22px;line-height:1}
+.res{font:700 16px var(--disp)}.win{color:var(--green)}.loss{color:var(--red)}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px;margin:0 0 12px;position:sticky;top:calc(var(--st) + 6px);z-index:5}
+.seg button{flex:1;text-align:center;padding:9px 0;border-radius:9px;font:600 14px system-ui;color:var(--dim)}
+.seg button.on{background:var(--raise);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.seg em{font-style:normal;color:var(--gold);margin-left:4px}
+.btns{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font:600 15px system-ui;border:1px solid var(--line);background:var(--raise);padding:0 12px}
+.btn.go{background:var(--cyan);color:#03141c;border-color:var(--cyan)}
+.btn.no{color:var(--red)}
+.btn.sel{border-color:var(--cyan);color:var(--cyan)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.req{border-color:var(--gold-l)}
+.tag{align-self:flex-start;font-size:12px;padding:3px 8px;border-radius:8px;background:var(--raise);color:var(--dim);border:1px solid var(--line);flex:none;text-transform:capitalize}
+.tag.new,.tag.requested{color:var(--gold);border-color:var(--gold-l);background:var(--gold-a)}
+.tag.fixed,.tag.approved,.tag.confirmed{color:var(--green)}.tag.denied,.tag.rejected{color:var(--red)}
+.slow{color:var(--gold)}.bad{color:var(--red)}.dim{color:var(--dim)}.faint{color:var(--faint)}
+.txt{margin:8px 0 2px;white-space:pre-wrap;word-break:break-word}
+.clip{max-height:4.2em;overflow:hidden}
+.thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto}
+.thumbs img,.thumbs .vid{width:86px;height:58px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:var(--raise);flex:none}
+.thumbs .vid{display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:22px}
+.media img,.media video{width:100%;border-radius:12px;border:1px solid var(--line);background:#000;display:block;margin-bottom:8px}
+.field{height:44px;border-radius:12px;background:var(--panel);border:1px solid var(--line);padding:0 14px;width:100%;font-size:16px;margin-bottom:10px}
+.field::placeholder{color:var(--faint)}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:rgba(13,16,19,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:8px 0 calc(var(--sb) + 8px);z-index:20}
+.tabbar>div{display:flex;width:100%;max-width:560px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:600 11px system-ui;color:var(--faint);position:relative;min-height:48px}
+.tab svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--cyan)}
+.tab .bd{position:absolute;top:-4px;left:52%;background:var(--gold);color:#1a1400;font:700 11px system-ui;border-radius:9px;padding:1px 6px}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--raise);display:flex;align-items:center;justify-content:center;flex:none}
+.ic svg{width:19px;height:19px;stroke:var(--cyan);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tog{width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.tog:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#aab;transition:left .15s}
+.tog.on{background:var(--cyan)}.tog.on:after{left:21px;background:#fff}
+.back{display:inline-flex;align-items:center;gap:2px;color:var(--cyan);font-size:16px;min-height:40px;padding-right:12px}
+.back b{font-size:26px;font-weight:400;line-height:1;margin-top:-3px}
+.dh{padding:2px 4px 12px}.dh h1{font:700 28px/1.08 var(--disp);word-break:break-word}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
+.stat .v{font:700 22px/1 var(--disp)}.stat .k{font-size:12px;color:var(--dim);margin-top:4px}
+.pl{display:grid;grid-template-columns:1fr 44px 44px 44px 52px;align-items:center}
+.pl>div{height:42px;display:flex;align-items:center;border-bottom:1px solid var(--line);font-size:14px;min-width:0}
+.pl>div:nth-last-child(-n+5){border-bottom:0}
+.pl .h{color:var(--faint);font-size:12px}.pl .r{justify-content:flex-end;font:600 16px var(--disp)}
+.pl .nmc{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;flex:none;background:var(--faint)}
+.acc{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);min-height:52px;width:100%;text-align:left}
+.acc:last-child{border-bottom:0}
+.kv{display:grid;grid-template-columns:minmax(96px,auto) 1fr;gap:6px 12px;font-size:14px}.kv>div:nth-child(odd){color:var(--dim)}.kv>div{word-break:break-word}
+details.card summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer;min-height:24px}
+details.card summary::-webkit-details-marker{display:none}
+details.card[open] summary{margin-bottom:10px}details.card summary:after{content:"›";color:var(--faint);font-size:22px;transition:transform .15s}details.card[open] summary:after{transform:rotate(90deg)}
+.meter{height:12px;border-radius:6px;background:var(--raise);overflow:hidden;display:flex;margin:10px 0 8px}
+.meter i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--dim)}.legend span:before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--c)}
+.big{font:700 26px/1 var(--disp)}
+.hl{outline:2px solid var(--cyan);outline-offset:-2px}
+.empty{color:var(--dim);text-align:center;padding:26px 10px}
+.signin{max-width:360px;margin:20vh auto 0;text-align:center}.signin h1{font:700 32px var(--disp);margin-bottom:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 92px);background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 16px;z-index:30;font-size:14px;max-width:90vw}
+.inline{display:flex;gap:8px}.inline .field{margin:0}
 </style></head><body>
-<header><h1>AGE PLAYTEST</h1><select id="build"><option value="">All builds</option></select><span id="me" class="muted"></span><span style="flex:1"></span><button id="reload">Reload</button><button id="out">Sign out</button></header>
-<nav id="tabs"></nav><main id="app"><p class="muted">Loading…</p></main>
+<div id="app"><p class="empty">Loading…</p></div>
+<nav class="tabbar" id="bar" hidden><div>
+<button class="tab" data-tab="now"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Now</button>
+<button class="tab" data-tab="players"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.4 3.4 0 010 6.8M18 14.8c2 .7 3.2 2.4 3.6 5.2"/></svg>Players<span class="bd" id="bdp" hidden></span></button>
+<button class="tab" data-tab="reports"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>Reports<span class="bd" id="bdr" hidden></span></button>
+<button class="tab" data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</button>
+</div></nav>
 <script>/*API*/</script>
 <script>
 (function(){
-var SLOW_AVG=40,SLOW_LOW=20;
-var app=document.getElementById("app"),tabsEl=document.getElementById("tabs"),D=null,LV=null,OPEN={},TAB="l",API=window.AGE_API||"",TOK=null,TIMER=null;
+var SLOW_AVG=40,SLOW_LOW=20,FREE_GB=10;
+var app=document.getElementById("app"),bar=document.getElementById("bar");
+var API=window.AGE_API||"",TOK=null,TIMER=null,D=null,LV=null,ST=null,BUILD="";
+var TAB="now",SUB="bugs",DET=null,Q="",ADD=false,HL="";
+var BUG_ST=["new","confirmed","fixed","rejected","duplicate","test"];
+var SW=["#5FD4FF","#FFD21A","#ff7a7a","#7fdc9a","#c79bff","#ff9f5a","#9AA3AB","#5a8cff"];
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
-function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?esc(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
-function signIn(msg){var site=!window.AGE_API;app.innerHTML='<div class="card"><h2>Admin sign-in</h2><p class="muted">'+esc(msg||"Sign in with the developer's Steam account.")+'</p><a class="big" href="'+esc(API+"/admin/login?to="+(site?"site&site="+encodeURIComponent(location.origin):"self"))+'">Sign in with Steam</a></div>';tabsEl.innerHTML=""}
+function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?String(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
+function ago(d){if(!d)return "";var s=Math.max(0,(Date.now()-new Date(d))/1000);if(isNaN(s))return String(d);return s<90?"just now":s<5400?Math.round(s/60)+" min ago":s<86400?Math.round(s/3600)+" h ago":s<172800?"yesterday":day(d)}
+function clock(sec){sec=Number(sec)||0;var m=Math.floor(sec/60),h=Math.floor(m/60);return (h?h+":"+String(m%60).padStart(2,"0"):m)+":"+String(sec%60).padStart(2,"0")}
+function join(a){return a.filter(function(x){return x!=null&&x!==""}).join(", ")}
+function plural(n,w){return n+" "+w+(n===1?"":/(ch|sh|s|x)$/.test(w)?"es":"s")}
+function kb(b){b=Number(b)||0;return b>=1073741824?(b/1073741824).toFixed(2)+" GB":b>=1048576?(b/1048576).toFixed(1)+" MB":Math.max(1,Math.round(b/1024))+" KB"}
+function toast(t){var e=document.createElement("div");e.className="toast";e.textContent=t;document.body.appendChild(e);setTimeout(function(){e.remove()},2600)}
+var chev='<span class="chev">›</span>';
+
+// ---------- server ----------
 function call(method,q,body){var o={method:method,headers:{Authorization:"Bearer "+TOK}};if(body){o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
  return fetch(API+"/?"+q,o).then(function(r){return r.json()})}
-function op(o){o.kind="admin";return call("POST","",o).then(function(r){if(!r.ok)alert(r.error||"failed");return r})}
-function ended(){ls("ageadm",null);TOK=null;clearInterval(TIMER);signIn("Session ended. Sign in again.")}
-function load(){app.innerHTML='<p class="muted">Loading…</p>';var b=document.getElementById("build").value;loadLive();
- call("GET","action=admin"+(b?"&build="+encodeURIComponent(b):"")).then(function(r){if(!r.ok)return ended();D=r;fillBuilds();render()}).catch(function(e){app.innerHTML='<p class="bad">'+esc(e.message||e)+'</p>'})}
-// The Live tab polls a small view every 10 s while it is open and the page is visible.
-function loadLive(){if(!TOK)return;call("GET","action=admin&view=live").then(function(r){if(!r.ok)return ended();LV=r;if(TAB==="l")render()}).catch(function(){})}
-function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<90?Math.round(s)+" s ago":s<5400?Math.round(s/60)+" min ago":day(d)}
-function clock(sec){sec=Number(sec)||0;var m=Math.floor(sec/60),h=Math.floor(m/60);return h?h+":"+String(m%60).padStart(2,"0")+":"+String(sec%60).padStart(2,"0"):m+":"+String(sec%60).padStart(2,"0")}
-function kv(o){var k=Object.keys(o||{}).filter(function(x){return x!=="shared"});if(!k.length)return '<p class="muted">None sent.</p>';return '<div class="kv">'+k.map(function(x){var v=o[x];return "<div>"+esc(x)+"</div><div>"+esc(typeof v==="object"?JSON.stringify(v):v)+"</div>"}).join("")+'</div>'}
+function op(o){o.kind="admin";return call("POST","",o).then(function(r){if(!r.ok)toast(r.error||"That didn't work.");return r})}
+function ended(){ls("ageadm",null);TOK=null;clearInterval(TIMER);signIn("Your session ended. Sign in again.")}
+function load(){return call("GET","action=admin"+(BUILD?"&build="+encodeURIComponent(BUILD):"")).then(function(r){if(!r.ok)return ended();D=r;render()}).catch(function(e){if(!D)app.innerHTML='<p class="empty bad">Could not load: '+esc(e.message||e)+'</p>'})}
+function loadLive(){if(!TOK)return Promise.resolve();return call("GET","action=admin&view=live").then(function(r){if(!r.ok)return ended();LV=r;render()}).catch(function(){})}
+function loadStorage(){return call("GET","action=admin&view=storage").then(function(r){ST=r;if(TAB==="more"&&!DET)render()}).catch(function(){})}
+function refresh(){return Promise.all([load(),loadLive(),TAB==="more"?loadStorage():null])}
+function signIn(msg){bar.hidden=true;var site=!window.AGE_API;app.innerHTML='<div class="signin"><h1>Dark Oasis Admin</h1><p class="dim">'+esc(msg||"Sign in with the developer's Steam account.")+'</p><div class="btns"><a class="btn go" href="'+esc(API+"/admin/login?to="+(site?"site&site="+encodeURIComponent(location.origin):"self"))+'">Sign in with Steam</a></div></div>'}
+
+// ---------- helpers on the data ----------
 function pname(p){return p.ai?"AI "+(p.difficulty||"")+(p.race?" "+p.race:""):p.name}
-function detail(m){var h='<div class="det">';
- h+='<div class="kv"><div>Match id</div><div>'+esc(m["Match id"])+'</div><div>Build</div><div>'+esc(m.Build)+'</div><div>Mode</div><div>'+esc(m.Mode)+'</div><div>Map</div><div>'+esc(m.Map)+(m["Map size"]?" ("+esc(m["Map size"])+")":"")+'</div><div>Seed</div><div>'+esc(m.Seed)+'</div><div>Started</div><div>'+day(m.Started)+'</div>'+(m.Ended?'<div>Ended</div><div>'+day(m.Ended)+" · "+esc(m.Minutes)+' min</div><div>Result</div><div>'+esc(m.Result)+(m.Winner?" · "+esc(m.Winner):"")+(m["How won"]?" ("+esc(m["How won"])+")":"")+'</div>':"")+'</div>';
- h+='<h4>Players</h4>'+table(["player","team","colour","result","killed","lost","built","gathered"],(m.players||[]).map(function(p){var s=p.stats||{};return {player:pname(p),team:p.team,colour:p.colour,result:p.result,killed:s.unitsKilled,lost:s.unitsLost,built:s.buildingsBuilt,gathered:s.resourcesGathered}}));
- h+='<h4>Match settings</h4>'+kv(m.settings);
- Object.keys(m.reports||{}).forEach(function(n){var r=m.reports[n]||{},pf=r.perf||{};h+='<h4>'+esc(n)+': settings</h4>'+kv(r.settings);
-  if(r.settingChanges&&r.settingChanges.length)h+='<div class="muted">Changed: '+r.settingChanges.map(function(c){return esc(c.t+" "+c.what)}).join(" · ")+'</div>';
-  if(pf.avgFps)h+='<div class="muted">'+esc(pf.avgFps)+' fps avg, '+esc(pf.low1Fps)+' 1% low</div>';
-  if(r.specs&&r.specs.gpu)h+='<div class="muted">'+esc([r.specs.gpu,r.specs.cpu,r.specs.ramGb?r.specs.ramGb+" GB":"",r.specs.resolution,r.specs.preset].filter(Boolean).join(" · "))+'</div>'});
- return h+'</div>'}
-function liveHtml(){if(!LV)return '<p class="muted">Loading…</p>';var h="",pu=LV.push||{};
- h+='<div class="row"><span class="muted">Updates every 10 s · '+LV.matches.length+' match'+(LV.matches.length===1?"":"es")+' running</span></div>';
- if(!LV.matches.length)h+='<p class="muted">Nobody is in a match right now.</p>';
- LV.matches.forEach(function(m){var id=m["Match id"],secs=Math.max.apply(null,m.live.map(function(r){return Number(r["Game seconds"])||0}).concat([0]));
-  var ai=(m.players||[]).filter(function(p){return p.ai});
-  h+='<div class="mc" data-open="'+esc(id)+'"><h3><span class="dot"></span>'+esc(m.live.map(function(r){return r.Player}).join(", "))+(ai.length?' <span class="muted">vs '+ai.length+' AI</span>':"")+'</h3>'
-   +'<div class="muted">'+esc([m.Map,m.Mode,m.Build||m.live[0].Build].filter(Boolean).join(" · "))+' · game time '+clock(secs)+' · started '+ago(m.live[0].Started)+'</div><div class="chips">'
-   +m.live.map(function(r){return '<span class="chip">'+esc(r.Player)+(r.Villagers!=null&&r.Villagers!==""?" · "+esc(r.Villagers)+" vil":"")+(r.Military?" · "+esc(r.Military)+" mil":"")+(Number(r.Out)?" · out":"")+'</span>'}).join("")
-   +ai.map(function(p){return '<span class="chip muted">'+esc(pname(p))+'</span>'}).join("")+'</div>'+(OPEN[id]?detail(m):"")+'</div>'});
- if(LV.recent&&LV.recent.length){h+='<h3 style="margin-top:22px;font-size:14px" class="muted">RECENT</h3>';LV.recent.forEach(function(m){var id=m["Match id"];
-  h+='<div class="mc" data-open="'+esc(id)+'"><b>'+esc(m.Humans||m["Reported by"]||"?")+'</b>'+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'<div class="muted">'+esc([m.Map,m.Result,m.Minutes?m.Minutes+" min":"",m.Build].filter(Boolean).join(" · "))+' · '+day(m.Started)+'</div>'+(OPEN[id]?detail(m):"")+'</div>'})}
- h+='<h3 style="margin-top:22px;font-size:14px" class="muted">PHONE NOTIFICATIONS</h3><div id="pushbox">'+pushHtml()+'</div>';
+function requested(){return D?D.testers.filter(function(t){return t.Status==="requested"}):[]}
+function newBugs(){return D?D.bugs.filter(function(b){return (b.Status||"new")==="new"}):[]}
+function bugTitle(b){var t=String(b.Report||"").split("\n")[0].trim();return t.length>70?t.slice(0,68)+"…":(t||b["Bug id"])}
+function bugBody(b){var l=String(b.Report||"").split("\n");return l.length>1&&l[0].trim().length<=70?l.slice(1).join("\n").trim():String(b.Report||"")}
+function fileKey(u){var m=/#file=([^&]+)/.exec(String(u||""));return m?decodeURIComponent(m[1]):""}
+function fileFor(key){if(!D||!key)return null;for(var i=0;i<D.files.length;i++){var f=D.files[i];if(f.key===key||("uploads/"+f.build+"/"+f.matchId+"/"+f.name)===key)return f}return null}
+function bugMedia(b){return String(b.Files||"").split("\n").filter(String).map(function(u){var k=fileKey(u),f=fileFor(k),name=k?k.split("/").pop():u;
+ var url=f&&f.download?f.download:(/^https?:/.test(u)&&!k?u:"");return {name:name,url:url,video:/\.(mp4|webm|mov)$/i.test(name),image:/\.(png|jpe?g|webp|gif)$/i.test(name),bytes:f?f.bytes:0,err:!/^https?:/.test(u)?u:""}})}
+function allMatches(){var o={};(D?D.matches:[]).forEach(function(m){o[m["Match id"]]=m});if(LV){LV.recent.forEach(function(m){o[m["Match id"]]=o[m["Match id"]]||m});LV.matches.forEach(function(m){o[m["Match id"]]=Object.assign({},o[m["Match id"]]||{},m)})}return o}
+function liveSecs(m){return Math.max.apply(null,(m.live||[]).map(function(r){return Number(r["Game seconds"])||0}).concat([0]))}
+function resultCls(r){r=String(r||"").toLowerCase();return /won|victory/.test(r)?"win":/lost|defeat/.test(r)?"loss":"dim"}
+function people(){var o={};function g(n){return o[n]=o[n]||{name:n}}
+ (D?D.players:[]).forEach(function(p){g(p.player).stats=p});
+ (D?D.testers:[]).forEach(function(t){if(t.Status==="requested")return;g(t.Name||t["Steam id"]).tester=t});
+ return Object.keys(o).map(function(k){return o[k]}).sort(function(a,b){return ((b.stats||{}).matches||0)-((a.stats||{}).matches||0)||a.name.localeCompare(b.name)})}
+function specLine(s){return s?join([s.gpu,s.resolution,s.preset]):""}
+function perfSlow(pf){return pf&&pf.avgFps&&(pf.avgFps<SLOW_AVG||pf.low1Fps<SLOW_LOW)}
+
+// ---------- pieces ----------
+function top(title,sub,right){return '<div class="top"><div><h1>'+esc(title)+'</h1>'+(sub?'<div class="sub">'+sub+'</div>':"")+'</div>'+(right||"")+'</div><div class="ptr" id="ptr"><i></i><span>Pull to refresh</span></div>'}
+function buildPicker(){var all={};(D?D.builds.concat(D.releases.map(function(x){return x.name})):[]).forEach(function(b){if(b)all[b]=1});
+ return '<select class="pill" id="build" aria-label="Build"><option value="">All builds</option>'+Object.keys(all).sort().reverse().map(function(b){return '<option'+(b===BUILD?" selected":"")+'>'+esc(b)+'</option>'}).join("")+'</select>'}
+function beat(seed){var x=40+(seed*37)%120;return '<svg class="beat" viewBox="0 0 330 26" preserveAspectRatio="none" aria-hidden="true"><path d="M0 18H330" stroke="#1e252b"/><path d="M0 18H'+x+'l6-10 6 16 6-12 4 6H'+(x+110)+'l6-14 6 18 6-10 4 6H330" stroke="#5FD4FF" stroke-width="1.5" fill="none" opacity=".3"/><path class="p" d="M0 18H'+x+'l6-10 6 16 6-12 4 6H'+(x+110)+'l6-14 6 18 6-10 4 6H330" stroke="#5FD4FF" stroke-width="2" fill="none"/></svg>'}
+function matchRow(m){var id=m["Match id"];return '<button class="row" data-det="match" data-id="'+esc(id)+'"><div class="grow"><div class="nm">'+esc(m.Humans||m["Reported by"]||"?")+(m.AI?' <span class="dim">vs '+esc(m.AI)+'</span>':"")+'</div><div class="sm">'+esc(join([m.Map,m.Minutes?m.Minutes+" min":"",m.Build]))+', '+esc(ago(m.Started))+'</div></div>'+(m.Result?'<span class="res '+resultCls(m.Result)+'">'+esc(m.Result)+'</span>':"")+chev+'</button>'}
+function testerButtons(t){return '<div class="btns"><button class="btn no" data-tester="'+esc(t["Steam id"])+'" data-st="denied">Deny</button><button class="btn go" data-tester="'+esc(t["Steam id"])+'" data-st="approved">Approve</button></div>'}
+function tog(on,attrs){return '<span class="tog'+(on?" on":"")+'" role="switch" aria-checked="'+(on?"true":"false")+'" '+attrs+'></span>'}
+
+// ---------- Now ----------
+function viewNow(){var lv=LV||{matches:[],recent:[]},rq=requested().length,nb=newBugs().length;
+ var h=top("Now",LV?plural(lv.matches.length,"match")+" running":"Loading…");
+ h+='<div class="att"><button class="'+(rq?"":"zero")+'" data-go="players"><div class="n">'+rq+'</div><div class="t">Testers waiting</div></button><button class="'+(nb?"":"zero")+'" data-go="reports" data-sub="bugs"><div class="n">'+nb+'</div><div class="t">New bugs</div></button></div>';
+ h+='<h2>Live</h2>';
+ if(!lv.matches.length)h+='<div class="card empty">Nobody is in a match right now. You\'ll get a notification when one starts.</div>';
+ lv.matches.forEach(function(m,i){var ai=(m.players||[]).filter(function(p){return p.ai});
+  h+='<button class="card live" data-det="match" data-id="'+esc(m["Match id"])+'"><div class="lh"><div class="who">'+esc(m.live.map(function(r){return r.Player}).join(", "))+'</div><div class="clock">'+clock(liveSecs(m))+'</div></div>'
+   +'<div class="meta">'+esc(join([m.Map,m.Mode,ai.length?"vs "+plural(ai.length,"AI").replace("AIs","AI"):"",m.Build||m.live[0].Build]))+'</div>'+beat(i+1)
+   +'<div class="chips">'+m.live.map(function(r){return '<span class="chip">'+esc(r.Player)+(r.Villagers!=null&&r.Villagers!==""?' <b>'+esc(r.Villagers)+'</b> vil':"")+(r.Military?' <b>'+esc(r.Military)+'</b> mil':"")+(Number(r.Out)?' <span class="bad">out</span>':"")+'</span>'}).join("")
+   +ai.map(function(p){return '<span class="chip ai">'+esc(pname(p))+'</span>'}).join("")+'</div></button>'});
+ if(lv.recent&&lv.recent.length)h+='<h2>Just finished</h2><div class="list">'+lv.recent.map(matchRow).join("")+'</div>';
  return h}
-// Web push (sw.js): only on the site copy of this page, installed to the home screen on iPhone.
+
+// ---------- Players ----------
+function viewPlayers(){if(!D)return top("Players","Loading…");var rq=requested(),ps=people(),q=Q.toLowerCase();
+ var week=Date.now()-7*86400000,active=(D.testers||[]).filter(function(t){return t["Last seen"]&&new Date(t["Last seen"])>week}).length;
+ var h=top("Players",plural(D.testers.filter(function(t){return t.Status==="approved"}).length,"tester")+", "+active+" active this week",'<button class="pill" data-act="add">'+(ADD?"Close":"+ Add")+'</button>');
+ if(ADD)h+='<div class="card"><div class="sm" style="white-space:normal;margin-bottom:8px">Approve someone by their Steam id. They can sign in on the playtest page straight away.</div><div class="inline"><input class="field" id="newsid" inputmode="numeric" placeholder="7656119…"><button class="btn go" style="flex:none" data-act="addsid">Approve</button></div></div>';
+ h+='<input class="field" id="q" type="search" placeholder="Search name or Steam id" value="'+esc(Q)+'">';
+ if(rq.length&&!q){h+='<h2>Waiting for you</h2>';rq.slice().reverse().forEach(function(t){h+='<div class="card req"><div style="display:flex;gap:12px;align-items:center"><div class="av" style="color:var(--gold)">'+esc((t.Name||"?").charAt(0).toUpperCase())+'</div><div class="grow"><div class="nm"><a href="'+esc(t.Profile)+'" target="_blank" rel="noopener" style="color:inherit">'+esc(t.Name)+'</a></div><div class="sm">Asked '+esc(ago(t.Requested))+'</div></div></div>'+testerButtons(t)+'</div>'})}
+ var list=ps.filter(function(p){return !q||p.name.toLowerCase().indexOf(q)>=0||(p.tester&&String(p.tester["Steam id"]).indexOf(q)>=0)});
+ h+='<h2>Everyone <small>'+list.length+'</small></h2>';
+ if(!list.length)h+='<div class="card empty">No one matches “'+esc(Q)+'”.</div>';
+ else h+='<div class="list">'+list.map(function(p){var s=p.stats||{},pf=s.lastPerf||{},t=p.tester;
+  var bits=[];if(perfSlow(pf))bits.push('<span class="slow">'+esc(pf.avgFps)+' fps</span>');if(s.matches)bits.push(plural(s.matches,"match")+(s.wins?", "+s.wins+" won":""));if(s.bugs)bits.push(plural(s.bugs,"bug"));if(s.specs&&s.specs.gpu)bits.push(esc(s.specs.gpu));if(!bits.length&&t)bits.push(t["Last seen"]?"Seen "+esc(ago(t["Last seen"])):"Not seen yet");
+  return '<button class="row" data-det="player" data-id="'+esc(p.name)+'"><div class="av">'+esc(p.name.charAt(0).toUpperCase())+'</div><div class="grow"><div class="nm">'+esc(p.name)+'</div><div class="sm">'+bits.join(", ")+'</div></div>'+(t&&t.Status!=="approved"?'<span class="tag '+esc(t.Status)+'">'+esc(t.Status)+'</span>':"")+chev+'</button>'}).join("")+'</div>';
+ return h}
+
+// ---------- Reports ----------
+function bugCard(b){var st=b.Status||"new",md=bugMedia(b);
+ var h='<div class="card'+(HL===b["Bug id"]?" hl":"")+'" id="bug-'+esc(b["Bug id"])+'"><button class="grow" style="display:block;width:100%;text-align:left" data-det="bug" data-id="'+esc(b["Bug id"])+'"><div style="display:flex;justify-content:space-between;gap:10px"><div class="grow"><div class="nm">'+esc(bugTitle(b))+'</div><div class="sm">'+esc(join([b.Player,ago(b.Received),b.Where]))+'</div></div><span class="tag '+esc(st)+'">'+esc(st)+'</span></div>'
+  +'<div class="txt clip">'+esc(bugBody(b))+'</div>';
+ if(md.length)h+='<div class="thumbs">'+md.map(function(f){return f.image&&f.url?'<img src="'+esc(f.url)+'" alt="" loading="lazy">':f.video?'<span class="vid">▶</span>':''}).join("")+'</div>';
+ h+='</button>';
+ if(st==="new")h+='<div class="btns"><button class="btn" data-bug="'+esc(b["Bug id"])+'" data-st="rejected">Reject</button><button class="btn" data-bug="'+esc(b["Bug id"])+'" data-st="duplicate">Duplicate</button><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="confirmed">Confirm</button></div>';
+ else if(st==="confirmed")h+='<div class="btns"><button class="btn go" data-bug="'+esc(b["Bug id"])+'" data-st="fixed">Mark fixed</button></div>';
+ return h+'</div>'}
+function bugRow(b){var st=b.Status||"new";return '<button class="row'+(HL===b["Bug id"]?" hl":"")+'" id="bug-'+esc(b["Bug id"])+'" data-det="bug" data-id="'+esc(b["Bug id"])+'"><div class="grow"><div class="nm">'+esc(bugTitle(b))+'</div><div class="sm">'+esc(join([b.Player,ago(b.Received)]))+'</div></div><span class="tag '+esc(st)+'">'+esc(st)+'</span>'+chev+'</button>'}
+function viewReports(){if(!D)return top("Reports","Loading…");var nb=newBugs(),h;
+ var subs={bugs:"Bugs",matches:"Matches",results:"Results",files:"Files"};
+ h=top("Reports",nb.length?plural(nb.length,"new bug")+" to look at":"No new bugs",buildPicker());
+ h+='<div class="seg">'+Object.keys(subs).map(function(k){return '<button data-sub="'+k+'" class="'+(SUB===k?"on":"")+'">'+subs[k]+(k==="bugs"&&nb.length?'<em>'+nb.length+'</em>':"")+'</button>'}).join("")+'</div>';
+ if(SUB==="bugs"){var bugs=D.bugs.slice().reverse(),open=bugs.filter(function(b){return /^(new|confirmed)$/.test(b.Status||"new")}),done=bugs.filter(function(b){return !/^(new|confirmed)$/.test(b.Status||"new")});
+  if(!bugs.length)h+='<div class="card empty">No bug reports'+(BUILD?" for "+esc(BUILD):"")+' yet.</div>';
+  h+=open.map(bugCard).join("");
+  if(done.length)h+='<h2>Closed <small>'+done.length+'</small></h2><div class="list">'+done.map(bugRow).join("")+'</div>'}
+ if(SUB==="matches")h+=D.matches.length?'<div class="list">'+D.matches.map(matchRow).join("")+'</div>':'<div class="card empty">No matches yet.</div>';
+ if(SUB==="results")h+=D.results.length?D.results.slice().reverse().map(function(r){return '<div class="card"><div style="display:flex;justify-content:space-between"><div><div class="nm">'+esc(r.Player)+'</div><div class="sm">'+esc(join([r.Mode,r.Players?r.Players+" players":"",r.Build]))+', '+esc(ago(r.Received))+'</div></div><span class="res '+(/^y|true|1/i.test(r.Won)?"win":"loss")+'">'+(/^y|true|1/i.test(r.Won)?"Won":"Lost")+'</span></div>'
+   +'<div class="stats" style="margin-top:10px"><div class="stat"><div class="v">'+esc(r["Match minutes"]||"–")+'</div><div class="k">Minutes</div></div><div class="stat"><div class="v">'+esc(r["Peak villagers"]||"–")+'</div><div class="k">Peak villagers</div></div><div class="stat"><div class="v">'+esc(r["Minute to 20 villagers"]||"–")+'</div><div class="k">Min to 20 vil</div></div></div>'
+   +'<div class="sm">'+esc(join([r["Resources gathered"]?r["Resources gathered"]+" gathered":"",r["Out of sync"]&&!/^(no|0|false)?$/i.test(r["Out of sync"])?"out of sync":""]))+'</div></div>'}).join(""):'<div class="card empty">No results yet.</div>';
+ if(SUB==="files"){if(D.storage!=="r2")h+='<div class="card sm" style="white-space:normal">File storage is off, so new uploads are not kept.</div>';
+  h+=D.files.length?'<div class="list">'+D.files.slice().reverse().map(function(f){return '<a class="row'+(HL&&HL===f.matchId?" hl":"")+'" href="'+esc(f.download||"#")+'" target="_blank" rel="noopener"><div class="ic"><svg viewBox="0 0 24 24">'+(/\.(png|jpe?g)$/i.test(f.name)?'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/>':/\.(mp4|webm)$/i.test(f.name)?'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>':'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>')+'</svg></div><div class="grow"><div class="nm">'+esc(f.name)+'</div><div class="sm">'+esc(join([kb(f.bytes),f.build,ago(f.updated)]))+'</div></div></a>'}).join("")+'</div>':'<div class="card empty">No files yet.</div>'}
+ return h}
+
+// ---------- More ----------
 var PUSHSUB=null,PUSHMSG="";
 function pushHtml(){var pu=(LV&&LV.push)||{},h="";
- if(window.AGE_API)return '<p class="muted">Open the site copy (play.darkoasisgames.com/admin/) for notifications.</p>';
- if(!pu.vapid)return '<p class="muted">Not set up on the server yet.</p>';
+ if(window.AGE_API)return '<div class="card sm" style="white-space:normal">Open play.darkoasisgames.com/admin/ to get notifications on this device.</div>';
+ if(!pu.vapid)return '<div class="card sm">Notifications are not set up on the server yet.</div>';
  var standalone=navigator.standalone||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
- if(!("serviceWorker" in navigator)||!("PushManager" in window)){
-  return /iPhone|iPad/.test(navigator.userAgent)&&!standalone?'<p>On iPhone: in Safari tap <b>Share</b>, then <b>Add to Home Screen</b>, then open <b>Dark Oasis Admin</b> from your home screen and come back here.</p>':'<p class="muted">This browser cannot get notifications.</p>'}
+ if(!("serviceWorker" in navigator)||!("PushManager" in window))return '<div class="card" style="font-size:14px">'+(/iPhone|iPad/.test(navigator.userAgent)&&!standalone?'On iPhone: in Safari tap <b>Share</b>, then <b>Add to Home Screen</b>, then open <b>Dark Oasis Admin</b> from your home screen.':'This browser can\'t get notifications.')+'</div>';
  var perm=window.Notification?Notification.permission:"default";
- if(PUSHSUB)h+='<p><span class="dot"></span>Notifications are on for this device.</p><div class="row"><button id="testpush">Send a test</button><button id="pushoff">Turn off on this device</button></div>';
- else if(perm==="denied")h+='<p class="bad">Notifications are blocked for this app. Turn them on in Settings &gt; Notifications &gt; Dark Oasis Admin, then reopen it.</p>';
- else h+='<div class="row"><button class="big" id="pushon">Enable notifications</button></div>';
- h+='<div class="row">'+(pu.types||[]).map(function(t){return '<button class="'+(t.on?"ok":"")+'" data-set="'+esc(t.event)+'" data-on="'+(t.on?0:1)+'">'+esc(t.title)+": "+(t.on?"on":"off")+'</button>'}).join("")+'</div>';
- h+='<p class="muted">'+(pu.devices||0)+' device'+(pu.devices===1?"":"s")+' signed up.'+(PUSHMSG?" "+esc(PUSHMSG):"")+'</p>';
+ h+='<div class="list">'+(pu.types||[]).filter(function(t){return t.event!=="test"}).map(function(t){return '<button class="acc" data-set="'+esc(t.event)+'" data-on="'+(t.on?0:1)+'"><span>'+esc(String(t.title).replace(/^[^A-Za-z]+/,""))+'</span>'+tog(t.on,"")+'</button>'}).join("");
+ if(PUSHSUB)h+='<div class="acc"><span class="sm">This device gets notifications</span><span style="display:flex;gap:16px"><button style="color:var(--dim)" data-act="pushoff">Turn off</button><button style="color:var(--cyan);font-weight:600" data-act="testpush">Send a test</button></span></div>';
+ else if(perm==="denied")h+='<div class="acc"><span class="sm bad" style="white-space:normal">Notifications are blocked. Turn them on in Settings, Notifications, Dark Oasis Admin, then reopen the app.</span></div>';
+ else h+='<div class="acc"><span class="sm">Not on for this device</span><button style="color:var(--cyan);font-weight:600" data-act="pushon">Turn on</button></div>';
+ h+='</div><div class="sm" style="padding:0 4px">'+plural(pu.devices||0,"device")+' signed up.'+(PUSHMSG?" "+esc(PUSHMSG):"")+'</div>';
  return h}
+function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';if(!ST.ok)return '<div class="card sm">'+esc(ST.error||"Storage is off.")+'</div>';
+ var cap=FREE_GB*1073741824,p=ST.parts||{},vid=ST.videos||0,parts=[["Bug videos",vid,"#c79bff"],["Screenshots and logs",Math.max(0,(p.uploads||0)-vid),"#5FD4FF"],["Builds",p.builds||0,"#FFD21A"],["Other",p.other||0,"#9AA3AB"]].filter(function(x){return x[1]>0});
+ var pct=Math.min(100,ST.bytes/cap*100);
+ return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="big">'+kb(ST.bytes)+'</span><span class="sm">of '+FREE_GB+' GB free</span></div>'
+  +'<div class="meter">'+parts.map(function(x){return '<i style="width:'+(x[1]/cap*100).toFixed(2)+'%;background:'+x[2]+'"></i>'}).join("")+'</div>'
+  +'<div class="legend">'+parts.map(function(x){return '<span style="--c:'+x[2]+'">'+esc(x[0])+' '+kb(x[1])+'</span>'}).join("")+'</div>'
+  +'<div class="sm" style="margin-top:8px;white-space:normal">'+(pct>80?'<span class="slow">Nearly full. Above 10 GB, Cloudflare charges about $0.015 per GB a month.</span> ':'')+plural(ST.count||0,"file")+'. Nothing is deleted automatically.</div></div>'}
+var MORE=[["access","Access","Block a build or a tester",'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>'],
+ ["releases","Releases","Builds testers can download",'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'],
+ ["objectives","Objectives","Challenges, points and trophies",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
+ ["visits","Site visits","Who opened the playtest page",'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
+ ["pings","E-mail log","E-mails that would have been sent",'<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>']];
+function moreSub(k){if(!D)return "";if(k==="access")return D.access.filter(function(a){return /^y/i.test(a.Blocked)}).length+" blocked";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000}).length+" this week";return ""}
+function viewMore(){var h=top("More","Signed in with Steam");
+ h+='<h2>Phone notifications</h2><div id="pushbox">'+pushHtml()+'</div>';
+ h+='<h2>Storage</h2>'+storageHtml();
+ h+='<h2>Manage</h2><div class="list">'+MORE.map(function(m){return '<button class="row" data-det="'+m[0]+'"><div class="ic"><svg viewBox="0 0 24 24">'+m[3]+'</svg></div><div class="grow"><div class="nm">'+m[1]+'</div><div class="sm">'+esc(moreSub(m[0])||m[2])+'</div></div>'+chev+'</button>'}).join("")+'</div>';
+ h+='<div class="list"><button class="row" data-act="out" style="justify-content:center;color:var(--red);font-weight:600">Sign out</button></div>';
+ return h}
+
+// ---------- detail pages ----------
+function backBar(label){return '<button class="back" data-act="back"><b>‹</b>'+esc(label)+'</button>'}
+function detMatch(id){var m=allMatches()[id];if(!m)return backBar("Back")+'<div class="card empty">This match is not in the list any more.</div>';
+ var live=!!(m.live&&m.live.length),ps=m.players||[],reps=m.reports||{},h=backBar(live?"Now":"Back");
+ var humans=live?m.live.map(function(r){return r.Player}).join(", "):(m.Humans||ps.filter(function(p){return !p.ai}).map(function(p){return p.name}).join(", ")||"Match");
+ h+='<div class="dh"><h1>'+esc(humans)+'<br><span style="color:'+(live?"var(--cyan)":"var(--dim)")+'">'+(live?"Live, "+clock(liveSecs(m)):esc(m.Result||"Finished")+(m.Minutes?", "+esc(m.Minutes)+" min":""))+'</span></h1>'
+  +'<div class="sub" style="margin-top:6px">'+esc(join([m.Map?(m.Map+(m["Map size"]?" ("+m["Map size"]+")":"")):"",m.Mode,m.Seed?"seed "+m.Seed:"",m.Build||(live&&m.live[0].Build)]))+'</div>'
+  +'<div class="sub">'+esc(day(m.Started))+(m.Winner?", winner "+esc(m.Winner)+(m["How won"]?" ("+esc(m["How won"])+")":""):"")+'</div></div>';
+ var lows=Object.keys(reps).map(function(k){return (reps[k].perf||{}).low1Fps}).filter(Boolean),low=lows.length?Math.min.apply(null,lows):null;
+ if(live){var vil=0,mil=0;m.live.forEach(function(r){vil+=Number(r.Villagers)||0;mil+=Number(r.Military)||0});
+  h+='<div class="stats"><div class="stat"><div class="v">'+vil+'</div><div class="k">Villagers</div></div><div class="stat"><div class="v">'+mil+'</div><div class="k">Military</div></div><div class="stat"><div class="v">'+ago(m.live[0].Started).replace(" ago","")+'</div><div class="k">Since start</div></div></div>'}
+ else h+='<div class="stats"><div class="stat"><div class="v">'+esc(m.Minutes||"–")+'</div><div class="k">Minutes</div></div><div class="stat"><div class="v">'+ps.length+'</div><div class="k">Players</div></div><div class="stat"><div class="v'+(low&&low<SLOW_LOW?" slow":"")+'">'+(low||"–")+'</div><div class="k">Lowest fps</div></div></div>';
+ if(ps.length){h+='<h2>Players</h2><div class="card" style="padding:4px 14px"><div class="pl"><div class="h">Player</div><div class="h r">Kill</div><div class="h r">Lost</div><div class="h r">Built</div><div class="h r">Gath.</div>';
+  ps.forEach(function(p,i){var s=p.stats||{};h+='<div class="nmc"><span class="sw" style="background:'+(SW[i%SW.length])+'"></span>'+esc(pname(p))+(p.result?' <span class="'+resultCls(p.result)+'" style="margin-left:6px;font-size:12px">'+esc(p.result)+'</span>':"")+'</div><div class="r">'+esc(s.unitsKilled==null?"–":s.unitsKilled)+'</div><div class="r">'+esc(s.unitsLost==null?"–":s.unitsLost)+'</div><div class="r">'+esc(s.buildingsBuilt==null?"–":s.buildingsBuilt)+'</div><div class="r">'+esc(s.resourcesGathered==null?"–":s.resourcesGathered)+'</div>'});
+  h+='</div></div>'}
+ var rk=Object.keys(reps);
+ if(rk.length){h+='<h2>Their PCs</h2>';rk.forEach(function(n){var r=reps[n]||{},pf=r.perf||{},sp=r.specs||{};
+  h+='<details class="card"><summary><div class="grow"><div class="nm">'+esc(n)+'</div><div class="sm'+(perfSlow(pf)?" slow":"")+'">'+esc(join([specLine(sp),pf.avgFps?pf.avgFps+" fps avg":"",pf.low1Fps?pf.low1Fps+" low":""]))+'</div></div></summary>'
+   +'<div class="kv">'+kvRows(Object.assign({GPU:sp.gpu,CPU:sp.cpu,RAM:sp.ramGb?sp.ramGb+" GB":"",Screen:sp.resolution,Preset:sp.preset},r.settings||{}))+'</div>'
+   +(r.settingChanges&&r.settingChanges.length?'<div class="sm" style="white-space:normal;margin-top:8px">Changed during the match: '+r.settingChanges.map(function(c){return esc(c.t+" "+c.what)}).join(", ")+'</div>':"")+'</details>'})}
+ if(m.settings&&Object.keys(m.settings).length)h+='<details class="card"><summary><span>Match settings</span></summary><div class="kv">'+kvRows(m.settings)+'</div></details>';
+ var files=D?D.files.filter(function(f){return f.matchId===id}):[];
+ if(files.length)h+='<h2>Files <small>'+files.length+'</small></h2><div class="list">'+files.map(function(f){return '<a class="row" href="'+esc(f.download)+'" target="_blank" rel="noopener"><div class="grow"><div class="nm">'+esc(f.name)+'</div><div class="sm">'+kb(f.bytes)+'</div></div>'+chev+'</a>'}).join("")+'</div>';
+ var bugs=D?D.bugs.filter(function(b){return b["Match id"]===id}):[];
+ if(bugs.length)h+='<h2>Bugs from this match</h2><div class="list">'+bugs.map(bugRow).join("")+'</div>';
+ return h}
+function kvRows(o){return Object.keys(o||{}).filter(function(k){return k!=="shared"&&o[k]!=null&&o[k]!==""}).map(function(k){var v=o[k];return '<div>'+esc(k)+'</div><div>'+esc(typeof v==="object"?JSON.stringify(v):v)+'</div>'}).join("")}
+function detBug(id){var b=D&&D.bugs.filter(function(x){return x["Bug id"]===id})[0];if(!b)return backBar("Reports")+'<div class="card empty">This bug is not in the list'+(BUILD?" for "+esc(BUILD):"")+'.</div>';
+ var st=b.Status||"new",md=bugMedia(b).sort(function(x,y){return (y.video?1:0)-(x.video?1:0)}),h=backBar("Reports");
+ h+='<div class="dh"><h1>'+esc(bugTitle(b))+'</h1><div class="sub" style="margin-top:6px">'+esc(join([b.Player,day(b.Received),b.Build]))+'</div></div>';
+ if(md.length){h+='<div class="media">'+md.map(function(f){if(!f.url)return '<div class="card sm">'+esc(f.err||f.name)+'</div>';
+  if(f.video)return '<video src="'+esc(f.url)+'" controls playsinline preload="metadata"></video>';
+  if(f.image)return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener"><img src="'+esc(f.url)+'" alt="Screenshot from '+esc(b.Player)+'"></a>';
+  return '<a class="card" style="display:flex;justify-content:space-between" href="'+esc(f.url)+'" target="_blank" rel="noopener"><span>'+esc(f.name)+'</span><span class="sm">'+(f.bytes?kb(f.bytes):"")+'</span></a>'}).join("")+'</div>'}
+ h+=(bugBody(b)?'<div class="card"><div class="txt" style="margin:0">'+esc(bugBody(b))+'</div></div>':"");
+ h+='<div class="card"><div class="kv">'+kvRows({"Bug id":b["Bug id"],Where:b.Where,"Game time":b["Game time"],Points:b.Points})+'</div>'+(b["Match id"]&&allMatches()[b["Match id"]]?'<div class="btns"><button class="btn" data-det="match" data-id="'+esc(b["Match id"])+'">Open the match</button></div>':"")+'</div>';
+ h+='<h2>Status</h2><div class="grid3">'+BUG_ST.map(function(s){return '<button class="btn'+(s===st?" sel":"")+'" data-bug="'+esc(id)+'" data-st="'+s+'" style="text-transform:capitalize">'+s+'</button>'}).join("")+'</div>';
+ return h}
+function detPlayer(name){var p=people().filter(function(x){return x.name===name})[0];if(!p)return backBar("Players")+'<div class="card empty">Not found.</div>';
+ var s=p.stats||{},t=p.tester,pf=s.lastPerf||{},h=backBar("Players");
+ h+='<div class="dh"><h1>'+esc(name)+'</h1><div class="sub" style="margin-top:6px">'+(t?'<span class="tag '+esc(t.Status)+'">'+esc(t.Status)+'</span> '+(t["Last seen"]?"seen "+esc(ago(t["Last seen"])):"not seen yet"):"Not on the tester list")+'</div></div>';
+ h+='<div class="stats"><div class="stat"><div class="v">'+(s.matches||0)+'</div><div class="k">Matches</div></div><div class="stat"><div class="v">'+(s.wins||0)+'<span class="faint">/'+(s.losses||0)+'</span></div><div class="k">Won / lost</div></div><div class="stat"><div class="v">'+(s.minutes||0)+'</div><div class="k">Minutes</div></div>'
+  +'<div class="stat"><div class="v">'+(s.bugs||0)+'</div><div class="k">Bugs</div></div><div class="stat"><div class="v">'+(s.points||0)+'</div><div class="k">Points</div></div><div class="stat"><div class="v'+(perfSlow(pf)?" slow":"")+'">'+(pf.avgFps||"–")+'</div><div class="k">Last fps</div></div></div>';
+ var info={};if(s.specs){info.GPU=s.specs.gpu;info.CPU=s.specs.cpu;info.RAM=s.specs.ramGb?s.specs.ramGb+" GB":"";info.Screen=s.specs.resolution}
+ if(pf.low1Fps)info["1% low"]=pf.low1Fps+" fps";if(s.trophies&&s.trophies.length)info.Trophies=s.trophies.join(", ");if(s.builds&&s.builds.length)info.Builds=s.builds.join(", ");
+ if(t){info["Steam id"]=t["Steam id"];info.Requested=day(t.Requested);if(t.Decided)info.Decided=day(t.Decided);if(t.Note)info.Note=t.Note}
+ if(Object.keys(info).length)h+='<div class="card" style="margin-top:6px"><div class="kv">'+kvRows(info)+'</div>'+(t&&t.Profile?'<div class="btns"><a class="btn" href="'+esc(t.Profile)+'" target="_blank" rel="noopener">Steam profile</a></div>':"")+'</div>';
+ if(t){h+=t.Status==="approved"?'<div class="btns"><button class="btn no" data-tester="'+esc(t["Steam id"])+'" data-st="denied">Remove access</button></div>':testerButtons(t)}
+ var ms=D?D.matches.filter(function(m){return (m.players||[]).some(function(q){return !q.ai&&q.name===name})}).slice(0,15):[];
+ if(ms.length)h+='<h2>Matches</h2><div class="list">'+ms.map(matchRow).join("")+'</div>';
+ var bugs=D?D.bugs.filter(function(b){return b.Player===name}).reverse():[];
+ if(bugs.length)h+='<h2>Bugs</h2><div class="list">'+bugs.map(bugRow).join("")+'</div>';
+ return h}
+function detAccess(){var h=backBar("More")+'<div class="dh"><h1>Access</h1><div class="sub">Blocked builds won\'t start; blocked testers can\'t download.</div></div>';
+ h+='<div class="card"><div class="seg" style="position:static;margin-bottom:10px"><button data-atype="build" class="'+(ATYPE==="build"?"on":"")+'">Build</button><button data-atype="tester" class="'+(ATYPE==="tester"?"on":"")+'">Tester</button></div>'
+  +'<input class="field" id="aval" placeholder="'+(ATYPE==="build"?"playtest-nov-4":"Steam id 7656119…")+'"><input class="field" id="anote" placeholder="Message they see (optional)">'
+  +'<div class="btns" style="margin-top:0"><button class="btn" data-act="aallow">Allow</button><button class="btn no" data-act="ablock">Block</button></div></div>';
+ h+=D.access.length?'<div class="list">'+D.access.map(function(a){var b=/^y/i.test(a.Blocked);return '<div class="acc"><div class="grow"><div class="nm">'+esc(a.Value)+'</div><div class="sm">'+esc(join([a.Type,a.Note,ago(a.Changed)]))+'</div></div><button class="btn'+(b?"":" no")+'" style="flex:none;min-height:38px" data-acc="'+esc(a.Type)+'" data-val="'+esc(a.Value)+'" data-bl="'+(b?0:1)+'">'+(b?"Allow":"Block")+'</button></div>'}).join("")+'</div>':'<div class="card empty">Nothing is blocked.</div>';
+ return h}
+var ATYPE="build";
+function detReleases(){var h=backBar("More")+'<div class="dh"><h1>Releases</h1></div>';
+ return h+(D.releases.length?'<div class="list">'+D.releases.slice().reverse().map(function(r){return '<div class="acc"><div class="grow"><div class="nm">'+esc(r.name)+'</div><div class="sm">'+esc(join([r.sizeMb?r.sizeMb+" MB":"",r.stored==="r2"?"stored here":r.stored==="link"?"external link":"missing",day(r.added)]))+'</div></div><button class="btn" style="flex:none;min-height:38px" data-rel="'+esc(r.name)+'">Get link</button></div>'}).join("")+'</div>':'<div class="card empty">No builds yet.</div>')}
+function detObjectives(){var h=backBar("More")+'<div class="dh"><h1>Objectives</h1></div>';
+ h+=D.objectives.length?D.objectives.map(function(o){return '<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><div class="nm" style="white-space:normal">'+esc(o.title)+'</div><span class="tag">'+esc(o.points)+' pts</span></div><div class="sm" style="white-space:normal;margin-top:4px">'+esc(o.description)+'</div><div class="sm" style="margin-top:6px">'+esc(join([o.trophy?"Trophy: "+o.trophy:"",o.until?"until "+day(o.until):"",o.feature]))+'</div>'+(o.completedBy&&o.completedBy.length?'<div class="chips" style="margin-top:8px">'+[].concat(o.completedBy).map(function(n){return '<span class="chip">'+esc(n)+'</span>'}).join("")+'</div>':"")+'</div>'}).join(""):'<div class="card empty">No active challenges.</div>';
+ return h+'<p class="sm" style="white-space:normal;padding:4px">Challenges are rows of the Objectives table.</p>'}
+function detVisits(){var h=backBar("More")+'<div class="dh"><h1>Site visits</h1><div class="sub">Last '+D.visits.length+'</div></div>';
+ return h+(D.visits.length?'<div class="list">'+D.visits.slice(0,300).map(function(v){return '<div class="row"><div class="grow"><div class="nm">'+esc(v.Tester||v.Event)+(v.Tester?' <span class="dim">'+esc(v.Event)+'</span>':"")+'</div><div class="sm">'+esc(join([v.Device,v.OS,v.Browser,v["Time zone"],v.Build]))+'</div></div><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">No visits yet.</div>')}
+function detPings(){var h=backBar("More")+'<div class="dh"><h1>E-mail log</h1><div class="sub" style="white-space:normal">E-mail isn\'t set up yet. These are the e-mails that would have gone out.</div></div>';
+ h+='<details class="card"><summary><span>Which e-mails to log</span></summary><div>'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="acc" style="padding-left:0;padding-right:0" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'"><div class="grow"><div>'+esc(s.Event)+'</div><div class="sm" style="white-space:normal">'+esc(s["What it means"])+'</div></div>'+tog(on,"")+'</button>'}).join("")+'</div></details>';
+ return h+(D.pings.length?D.pings.map(function(p){return '<div class="card"><div class="nm" style="white-space:normal">'+esc(String(p.Subject||"").replace(/^\[Age\] /,""))+'</div><div class="sm">'+esc(join([p.Event,ago(p.Time)]))+'</div><div class="txt sm" style="white-space:pre-wrap">'+esc(p.Text)+'</div></div>'}).join(""):'<div class="card empty">Nothing logged yet.</div>')}
+
+// ---------- render ----------
+function render(){if(!TOK)return;bar.hidden=false;
+ var rq=requested().length,nb=newBugs().length;
+ setBadge("bdp",rq);setBadge("bdr",nb);
+ [].forEach.call(bar.querySelectorAll(".tab"),function(t){t.classList.toggle("on",t.dataset.tab===TAB)});
+ var a=document.activeElement,keepQ=a&&a.id==="q",pos=keepQ?a.selectionStart:0,h;
+ if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,access:detAccess,releases:detReleases,objectives:detObjectives,visits:detVisits,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
+ else h=({now:viewNow,players:viewPlayers,reports:viewReports,more:viewMore}[TAB])();
+ app.innerHTML=h;
+ if(keepQ){var q=document.getElementById("q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(e){}}}
+ if(HL&&!DET){var el=document.getElementById("bug-"+HL)||app.querySelector(".hl");if(el){el.scrollIntoView({block:"center"});HL=""}}}
+function setBadge(id,n){var e=document.getElementById(id);e.hidden=!n;e.textContent=n>99?"99+":n}
+function go(tab,sub){TAB=tab;if(sub)SUB=sub;DET=null;ls("agetab",TAB);window.scrollTo(0,0);if(TAB==="now")loadLive();if(TAB==="more"&&!ST)loadStorage();render()}
+function openDet(t,id){DET={t:t,id:id};history.pushState({det:DET},"");window.scrollTo(0,0);render()}
+window.addEventListener("popstate",function(e){DET=e.state&&e.state.det||null;render()});
+
+// ---------- events ----------
+document.addEventListener("click",function(e){var t=e.target.closest("button,a,[data-det]");if(!t)return;var d=t.dataset;
+ if(d.tab){go(d.tab);return}
+ if(d.go){go(d.go,d.sub);return}
+ if(d.sub&&!d.go){SUB=d.sub;render();return}
+ if(d.bug){var b=D.bugs.filter(function(x){return x["Bug id"]===d.bug})[0];if(b)b.Status=d.st;render();op({op:"setBug",bugId:d.bug,status:d.st,points:d.st==="rejected"||d.st==="test"||d.st==="duplicate"?0:undefined}).then(function(r){if(r.ok)toast("Marked "+d.st+".")});return}
+ if(d.tester){var tt=D.testers.filter(function(x){return x["Steam id"]===d.tester})[0];if(tt)tt.Status=d.st;render();op({op:"setTester",steamId:d.tester,status:d.st}).then(function(r){if(r.ok)toast(d.st==="approved"?"Approved.":"Denied.");load()});return}
+ if(d.set){op({op:"setSetting",event:d.set,on:d.on==="1"}).then(function(){return Promise.all([loadLive(),load()])});return}
+ if(d.acc){op({op:"setAccess",type:d.acc,value:d.val,blocked:d.bl==="1"}).then(load);return}
+ if(d.atype){ATYPE=d.atype;render();return}
+ if(d.rel){op({op:"releaseLink",build:d.rel}).then(function(r){if(!r.ok)return;if(navigator.share)navigator.share({title:d.rel,url:r.url}).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(r.url).then(function(){toast("Link copied. It works for 30 minutes.")})});return}
+ if(d.det){e.preventDefault();openDet(d.det,d.id);return}
+ var a=d.act;if(!a)return;
+ if(a==="back"){history.length>1?history.back():(DET=null,render());return}
+ if(a==="add"){ADD=!ADD;render();return}
+ if(a==="addsid"){var v=document.getElementById("newsid").value.trim();if(!/^7656119\d{10}$/.test(v))return toast("That isn't a Steam id. It starts with 7656119 and has 17 digits.");op({op:"setTester",steamId:v,status:"approved"}).then(function(r){if(r.ok){ADD=false;toast("Approved.");load()}});return}
+ if(a==="ablock"||a==="aallow"){var val=document.getElementById("aval").value.trim();if(!val)return toast("Type a build or a Steam id first.");op({op:"setAccess",type:ATYPE,value:val,blocked:a==="ablock",note:document.getElementById("anote").value}).then(function(r){if(r.ok){toast(a==="ablock"?"Blocked.":"Allowed.");load()}});return}
+ if(a==="pushon"){pushOn();return}
+ if(a==="pushoff"){pushOff();return}
+ if(a==="testpush"){PUSHMSG="Sending…";pushRefresh();op({op:"testPush"}).then(function(r){PUSHMSG=r.ok?"Test sent.":"";pushRefresh()});return}
+ if(a==="out"){ls("ageadm",null);TOK=null;clearInterval(TIMER);signIn();return}});
+document.addEventListener("input",function(e){if(e.target.id==="q"){Q=e.target.value;render()}});
+document.addEventListener("change",function(e){if(e.target.id==="build"){BUILD=e.target.value;load()}});
+
+// Pull to refresh: drag down from the very top of a page.
+(function(){var y0=null,dy=0,busy=false;
+ document.addEventListener("touchstart",function(e){y0=window.scrollY<=0&&!busy?e.touches[0].clientY:null;dy=0},{passive:true});
+ document.addEventListener("touchmove",function(e){if(y0==null)return;dy=e.touches[0].clientY-y0;var p=document.getElementById("ptr");if(!p)return;p.style.height=Math.max(0,Math.min(44,dy/2))+"px";p.lastChild.textContent=dy>110?"Release to refresh":"Pull to refresh"},{passive:true});
+ document.addEventListener("touchend",function(){var p=document.getElementById("ptr");if(y0==null||!p){y0=null;return}y0=null;
+  if(dy>110){busy=true;p.classList.add("spin");p.lastChild.textContent="Refreshing…";refresh().then(function(){busy=false;var q=document.getElementById("ptr");if(q){q.style.height="0";q.classList.remove("spin")}})}else p.style.height="0"})})();
+
+// ---------- web push (sw.js) ----------
 function keyBytes(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
 function pushRefresh(){var b=document.getElementById("pushbox");if(b)b.innerHTML=pushHtml()}
 function pushCheck(){if(window.AGE_API||!("serviceWorker" in navigator))return;navigator.serviceWorker.ready.then(function(r){return r.pushManager&&r.pushManager.getSubscription()}).then(function(s){PUSHSUB=s||null;pushRefresh()}).catch(function(){})}
@@ -94,71 +393,31 @@ function pushOn(){PUSHMSG="";var ask=window.Notification&&Notification.requestPe
  Promise.resolve(ask).then(function(p){if(p!=="granted")throw new Error("Notifications were not allowed.");return navigator.serviceWorker.ready})
  .then(function(r){return r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(LV.push.vapid)})})
  .then(function(s){PUSHSUB=s;return op({op:"pushSubscribe",sub:s.toJSON(),agent:navigator.userAgent})})
- .then(function(r){if(r.ok){PUSHMSG="Sending a test...";loadLive();return op({op:"testPush"})}})
+ .then(function(r){if(r.ok){PUSHMSG="Sending a test…";loadLive();return op({op:"testPush"})}})
  .then(function(r){PUSHMSG=r&&r.ok?"Test sent.":"";pushRefresh()})
  .catch(function(e){PUSHMSG=e.message||String(e);pushRefresh()})}
 function pushOff(){if(!PUSHSUB)return;var ep=PUSHSUB.endpoint;PUSHSUB.unsubscribe().catch(function(){}).then(function(){PUSHSUB=null;return op({op:"pushUnsubscribe",endpoint:ep})}).then(loadLive)}
 function seen(){if(!TOK)return;try{navigator.clearAppBadge&&navigator.clearAppBadge()}catch(e){}op({op:"pushSeen"}).catch(function(){})}
-// #live=<match id>, #bugs=<bug id>, #files=<match id>: a notification's target.
-var HL="";
+
+// #live=<match id>, #bugs=<bug id>, #files=<match id>, #players: a notification's target.
 function goHash(hash){var h=new URLSearchParams(String(hash||"").replace(/^#/,""));
- if(h.has("live")){TAB="l";if(h.get("live"))OPEN[h.get("live")]=true;loadLive()}
- else if(h.has("bugs")){TAB="g";HL=h.get("bugs")||""}
- else if(h.has("files")){TAB="f";HL=h.get("files")||""}
+ if(h.has("live")){TAB="now";DET=null;if(h.get("live")){DET={t:"match",id:h.get("live")};history.replaceState(null,"",location.pathname);history.pushState({det:DET},"")}loadLive()}
+ else if(h.has("bugs")){TAB="reports";SUB="bugs";DET=null;if(h.get("bugs")){DET={t:"bug",id:h.get("bugs")};history.replaceState(null,"",location.pathname);history.pushState({det:DET},"")}}
+ else if(h.has("files")){TAB="reports";SUB="files";DET=null;HL=h.get("files")||""}
+ else if(h.has("players")){TAB="players";DET=null}
  else return false;
  render();return true}
-function highlight(){if(!HL)return;var tds=app.querySelectorAll("td");for(var i=0;i<tds.length;i++){if(tds[i].textContent===HL){var tr=tds[i].parentNode;tr.style.outline="2px solid var(--acc)";tr.scrollIntoView({block:"center"});return}}}
-function fillBuilds(){var s=document.getElementById("build"),cur=s.value,all={};D.builds.concat(D.releases.map(function(x){return x.name})).forEach(function(b){all[b]=1});
- s.innerHTML='<option value="">All builds</option>'+Object.keys(all).sort().map(function(b){return '<option'+(b===cur?" selected":"")+'>'+esc(b)+'</option>'}).join("")}
-function table(cols,rows,fmt){if(!rows.length)return '<p class="muted">Nothing yet.</p>';return '<div class="wrap"><table><tr>'+cols.map(function(c){return "<th>"+esc(c)+"</th>"}).join("")+'</tr>'+rows.map(function(r){return "<tr>"+cols.map(function(c){return fmt&&fmt[c]?fmt[c](r[c],r):"<td>"+esc(r[c])+"</td>"}).join("")+"</tr>"}).join("")+'</table></div>'}
-var TABS=[["l","Live"],["p","Players"],["t","Testers"],["m","History"],["g","Bugs"],["r","Results"],["f","Files"],["a","Access"],["v","Visits"],["o","Objectives"],["n","Pings"],["s","Releases"]];
-function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"&&D?D.testers.filter(function(x){return x.Status==="requested"}).length:t[0]==="l"&&LV?LV.matches.length:0;return '<button data-tab="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+(n?" ("+n+")":"")+'</button>'}).join("");
- var h="";
- if(TAB==="l"){app.innerHTML=liveHtml();return}
- if(!D){app.innerHTML='<p class="muted">Loading…</p>';return}
- if(TAB==="p")h=table(["player","builds","matches","wins","losses","minutes","bugs","points","trophies","perf","specs"],D.players.map(function(p){var x=Object.assign({},p);x.builds=p.builds.join(", ");x.trophies=(p.trophies||[]).join(", ");
-   var pf=p.lastPerf||{};x.perf=pf.avgFps?(pf.avgFps+" avg / "+(pf.low1Fps||"?")+" low"):"";x._slow=pf.avgFps&&(pf.avgFps<SLOW_AVG||pf.low1Fps<SLOW_LOW);x.specs=p.specs?[p.specs.gpu,p.specs.cpu,p.specs.ramGb?p.specs.ramGb+" GB":"",p.specs.resolution].filter(Boolean).join(" · "):"";return x}),
-   {perf:function(v,r){return '<td class="'+(r._slow?"slow":"")+'">'+esc(v)+'</td>'}});
- if(TAB==="t")h='<div class="row"><input id="newsid" placeholder="Steam id 7656119…" size="22"><button id="addsid" class="ok">Approve id</button></div>'+table(["Name","Steam id","Status","Requested","Decided","Last seen","Note",""],D.testers.slice().reverse(),{
-   Name:function(v,r){return '<td><a target="_blank" rel="noopener" href="'+esc(r.Profile)+'">'+esc(v)+'</a></td>'},Status:function(v){return '<td class="'+esc(v)+'">'+esc(v)+'</td>'},
-   Requested:function(v){return "<td>"+day(v)+"</td>"},Decided:function(v){return "<td>"+day(v)+"</td>"},"Last seen":function(v){return "<td>"+day(v)+"</td>"},
-   "":function(v,r){return '<td><button class="ok" data-tester="'+esc(r["Steam id"])+'" data-st="approved">Approve</button> <button class="bad" data-tester="'+esc(r["Steam id"])+'" data-st="denied">Deny</button></td>'}});
- if(TAB==="m")h=D.matches.length?'<p class="muted">Tap a match for its players and settings.</p><div class="wrap"><table><tr><th>Started</th><th>Players</th><th>Map</th><th>Min</th><th>Result</th><th class="hide-s">Build</th><th class="hide-s">Mode</th></tr>'+D.matches.map(function(m){var id=m["Match id"];
-   return '<tr class="click" data-open="'+esc(id)+'"><td>'+day(m.Started)+'</td><td>'+esc(m.Humans)+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'</td><td>'+esc(m.Map)+'</td><td>'+esc(m.Minutes)+'</td><td>'+esc(m.Result)+'</td><td class="hide-s">'+esc(m.Build)+'</td><td class="hide-s">'+esc(m.Mode)+'</td></tr>'+(OPEN[id]?'<tr><td colspan="7">'+detail(m)+'</td></tr>':"")}).join("")+'</table></div>':'<p class="muted">Nothing yet.</p>';
- if(TAB==="g")h=table(["Received","Bug id","Player","Build","Where","Report","Files","Status","Points",""],D.bugs.slice().reverse(),{Received:function(v){return "<td>"+day(v)+"</td>"},Report:function(v){return '<td class="pre">'+esc(v)+'</td>'},
-   Files:function(v){return '<td class="pre">'+String(v||"").split("\n").filter(String).map(function(u){return /^https?:/.test(u)?'<a target="_blank" rel="noopener" href="'+esc(u)+'">file</a>':esc(u)}).join("<br>")+'</td>'},
-   "":function(v,r){return '<td><select data-bug="'+esc(r["Bug id"])+'">'+["new","confirmed","fixed","rejected","duplicate","test"].map(function(s){return "<option"+(s===r.Status?" selected":"")+">"+s+"</option>"}).join("")+'</select></td>'}});
- if(TAB==="r")h=table(["Received","Player","Build","Mode","Players","Won","Match minutes","Peak villagers","Minute to 20 villagers","Resources gathered","Out of sync"],D.results.slice().reverse(),{Received:function(v){return "<td>"+day(v)+"</td>"}});
- if(TAB==="f")h=(D.storage!=="r2"?'<p class="muted">File storage (R2) is off: new uploads are not kept. Imported files still link to Google Drive.</p>':"")+table(["updated","build","matchId","player","name","bytes"],D.files.slice().reverse(),{updated:function(v){return "<td>"+day(v)+"</td>"},
-   name:function(v,r){return '<td>'+(r.download?'<a target="_blank" rel="noopener" href="'+esc(r.download)+'">'+esc(v)+'</a>':esc(v))+'</td>'},bytes:function(v){return "<td>"+Math.round(v/1024)+" KB</td>"}});
- if(TAB==="a")h='<div class="row"><select id="atype"><option value="build">build</option><option value="tester">tester (Steam id)</option></select><input id="aval" placeholder="playtest-nov-4 or Steam id"><input id="anote" placeholder="Message shown (optional)" size="30"><button class="bad" id="ablock">Block</button><button class="ok" id="aallow">Allow</button></div>'
-   +table(["Type","Value","Blocked","Note","Changed",""],D.access,{Changed:function(v){return "<td>"+day(v)+"</td>"},"":function(v,r){var b=/^y/i.test(r.Blocked);return '<td><button data-acc="'+esc(r.Type)+'" data-val="'+esc(r.Value)+'" data-bl="'+(b?0:1)+'">'+(b?"Allow":"Block")+'</button></td>'}});
- if(TAB==="v")h=table(["Time","Event","Build","Tester","Source","Visitor","Device","OS","Browser","Time zone","Referrer"],D.visits,{Time:function(v){return "<td>"+day(v)+"</td>"}});
- if(TAB==="o")h=table(["id","title","description","feature","points","trophy","until","completedBy"],D.objectives)+'<p class="muted">Objectives are rows of the Objectives table (Id, Title, Description, Feature, Points, Trophy, Active from, Active until, Stat, Compare, Target, Repeatable).</p>';
- if(TAB==="n")h='<p class="muted">E-mail is not set up on Cloudflare yet; these are the notifications that would have been sent.</p><div class="row">'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="'+(on?"ok":"")+'" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'" title="'+esc(s["What it means"])+'">'+esc(s.Event)+": "+(on?"on":"off")+'</button>'}).join("")+'</div>'+table(["Time","Event","Subject","Text"],D.pings,{Time:function(v){return "<td>"+day(v)+"</td>"},Text:function(v){return '<td class="pre">'+esc(v)+'</td>'}});
- if(TAB==="s")h=table(["name","added","sizeMb","stored"],D.releases,{added:function(v){return "<td>"+day(v)+"</td>"}});
- app.innerHTML=h;highlight()}
-document.addEventListener("click",function(e){var t=e.target;
- if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);if(TAB==="l")loadLive();render();return}
- if(t.id==="pushon"){pushOn();return}
- if(t.id==="pushoff"){pushOff();return}
- if(t.id==="testpush"){PUSHMSG="Sending...";pushRefresh();op({op:"testPush"}).then(function(r){PUSHMSG=r.ok?"Test sent.":"";pushRefresh()});return}
- var o=t.closest&&t.closest("[data-open]");if(o&&!(t.closest(".det"))&&!t.dataset.set){var k=o.dataset.open;OPEN[k]=!OPEN[k];render();return}
- if(t.dataset.tester){op({op:"setTester",steamId:t.dataset.tester,status:t.dataset.st}).then(load);return}
- if(t.dataset.acc){op({op:"setAccess",type:t.dataset.acc,value:t.dataset.val,blocked:t.dataset.bl==="1"}).then(load);return}
- if(t.dataset.set){op({op:"setSetting",event:t.dataset.set,on:t.dataset.on==="1"}).then(TAB==="l"?loadLive:load);return}
- if(t.id==="addsid"){var v=document.getElementById("newsid").value.trim();if(v)op({op:"setTester",steamId:v,status:"approved"}).then(load);return}
- if(t.id==="ablock"||t.id==="aallow"){var val=document.getElementById("aval").value.trim();if(val)op({op:"setAccess",type:document.getElementById("atype").value,value:val,blocked:t.id==="ablock",note:document.getElementById("anote").value}).then(load);return}
- if(t.id==="reload"){TAB==="l"?loadLive():load();return}
- if(t.id==="out"){ls("ageadm",null);TOK=null;signIn();return}});
-document.addEventListener("change",function(e){var t=e.target;if(t.dataset.bug){op({op:"setBug",bugId:t.dataset.bug,status:t.value,points:t.value==="rejected"||t.value==="test"?0:undefined});return}if(t.id==="build")load()});
+
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
- TAB=ls("agetab")||"l";TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
- if(!TOK)return signIn();goHash(location.hash);load();seen();pushCheck();clearInterval(TIMER);TIMER=setInterval(function(){if(TAB==="l"&&!document.hidden)loadLive()},10000);
- document.addEventListener("visibilitychange",function(){if(document.hidden)return;seen();if(TAB==="l")loadLive()});
+ TAB=ls("agetab")||"now";if(!/^(now|players|reports|more)$/.test(TAB))TAB="now";TOK=ls("ageadm");
+ if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
+ if(!TOK)return signIn();
+ goHash(location.hash);render();load();loadLive();if(TAB==="more")loadStorage();seen();pushCheck();
+ clearInterval(TIMER);TIMER=setInterval(function(){if(!document.hidden&&TAB==="now")loadLive()},10000);
+ document.addEventListener("visibilitychange",function(){if(document.hidden)return;seen();refresh()});
  if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",function(e){if(e.data&&e.data.open){goHash(new URL(e.data.open).hash);seen()}})}
 if(!window.AGE_API&&"serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 function pickApi(def){return fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){var l=[c.api,c.fallback].filter(Boolean);function t(i){if(i>=l.length)return def;var u=String(l[i]).replace(/\/+$/,"");return fetch(u+"/?action=ping",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){return j&&"ok" in j?u:t(i+1)},function(){return t(i+1)})}return t(0)},function(){return def})}
-if(API)start();else pickApi("").then(function(u){API=u;if(!u){app.innerHTML="<p>Could not reach the playtest server.</p>";return}start()});
+if(API)start();else pickApi("").then(function(u){API=u;if(!u){app.innerHTML='<p class="empty">Could not reach the playtest server. Pull down to try again.</p>';return}start()});
 })();
 </script></body></html>
