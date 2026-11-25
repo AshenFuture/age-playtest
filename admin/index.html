@@ -2,6 +2,8 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
 <title>Age playtesters</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dark Oasis Admin"><meta name="theme-color" content="#0b1016">
 <style>
 :root{--bg:#0b1016;--panel:#121a23;--line:#24323f;--text:#e4edf3;--muted:#8aa0b0;--acc:#5fd4ff;--ok:#7fdc7f;--bad:#ff7a7a;--warn:#e0c070}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
@@ -68,10 +70,44 @@ function liveHtml(){if(!LV)return '<p class="muted">Loading…</p>';var h="",pu=
    +ai.map(function(p){return '<span class="chip muted">'+esc(pname(p))+'</span>'}).join("")+'</div>'+(OPEN[id]?detail(m):"")+'</div>'});
  if(LV.recent&&LV.recent.length){h+='<h3 style="margin-top:22px;font-size:14px" class="muted">RECENT</h3>';LV.recent.forEach(function(m){var id=m["Match id"];
   h+='<div class="mc" data-open="'+esc(id)+'"><b>'+esc(m.Humans||m["Reported by"]||"?")+'</b>'+(m.AI?' <span class="muted">vs '+esc(m.AI)+'</span>':"")+'<div class="muted">'+esc([m.Map,m.Result,m.Minutes?m.Minutes+" min":"",m.Build].filter(Boolean).join(" · "))+' · '+day(m.Started)+'</div>'+(OPEN[id]?detail(m):"")+'</div>'})}
- h+='<h3 style="margin-top:22px;font-size:14px" class="muted">PHONE NOTIFICATIONS</h3>';
- if(!pu.topic)h+='<p class="muted">Not set up on the server (NTFY_TOPIC).</p>';
- else h+='<p>A notification when a tester starts a match: install the free <a target="_blank" rel="noopener" href="https://ntfy.sh/">ntfy</a> app, tap +, and subscribe to <a target="_blank" rel="noopener" href="'+esc(pu.topic)+'">'+esc(pu.topic.replace("https://ntfy.sh/",""))+'</a> (server ntfy.sh). Keep the topic name private.</p><div class="row"><button class="'+(pu.on?"ok":"")+'" data-set="match-start" data-on="'+(pu.on?0:1)+'">Match start: '+(pu.on?"on":"off")+'</button><button id="testpush">Send a test</button></div>';
+ h+='<h3 style="margin-top:22px;font-size:14px" class="muted">PHONE NOTIFICATIONS</h3><div id="pushbox">'+pushHtml()+'</div>';
  return h}
+// Web push (sw.js): only on the site copy of this page, installed to the home screen on iPhone.
+var PUSHSUB=null,PUSHMSG="";
+function pushHtml(){var pu=(LV&&LV.push)||{},h="";
+ if(window.AGE_API)return '<p class="muted">Open the site copy (play.darkoasisgames.com/admin/) for notifications.</p>';
+ if(!pu.vapid)return '<p class="muted">Not set up on the server yet.</p>';
+ var standalone=navigator.standalone||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+ if(!("serviceWorker" in navigator)||!("PushManager" in window)){
+  return /iPhone|iPad/.test(navigator.userAgent)&&!standalone?'<p>On iPhone: in Safari tap <b>Share</b>, then <b>Add to Home Screen</b>, then open <b>Dark Oasis Admin</b> from your home screen and come back here.</p>':'<p class="muted">This browser cannot get notifications.</p>'}
+ var perm=window.Notification?Notification.permission:"default";
+ if(PUSHSUB)h+='<p><span class="dot"></span>Notifications are on for this device.</p><div class="row"><button id="testpush">Send a test</button><button id="pushoff">Turn off on this device</button></div>';
+ else if(perm==="denied")h+='<p class="bad">Notifications are blocked for this app. Turn them on in Settings &gt; Notifications &gt; Dark Oasis Admin, then reopen it.</p>';
+ else h+='<div class="row"><button class="big" id="pushon">Enable notifications</button></div>';
+ h+='<div class="row">'+(pu.types||[]).map(function(t){return '<button class="'+(t.on?"ok":"")+'" data-set="'+esc(t.event)+'" data-on="'+(t.on?0:1)+'">'+esc(t.title)+": "+(t.on?"on":"off")+'</button>'}).join("")+'</div>';
+ h+='<p class="muted">'+(pu.devices||0)+' device'+(pu.devices===1?"":"s")+' signed up.'+(PUSHMSG?" "+esc(PUSHMSG):"")+'</p>';
+ return h}
+function keyBytes(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+function pushRefresh(){var b=document.getElementById("pushbox");if(b)b.innerHTML=pushHtml()}
+function pushCheck(){if(window.AGE_API||!("serviceWorker" in navigator))return;navigator.serviceWorker.ready.then(function(r){return r.pushManager&&r.pushManager.getSubscription()}).then(function(s){PUSHSUB=s||null;pushRefresh()}).catch(function(){})}
+function pushOn(){PUSHMSG="";var ask=window.Notification&&Notification.requestPermission?Notification.requestPermission():Promise.resolve("granted");
+ Promise.resolve(ask).then(function(p){if(p!=="granted")throw new Error("Notifications were not allowed.");return navigator.serviceWorker.ready})
+ .then(function(r){return r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(LV.push.vapid)})})
+ .then(function(s){PUSHSUB=s;return op({op:"pushSubscribe",sub:s.toJSON(),agent:navigator.userAgent})})
+ .then(function(r){if(r.ok){PUSHMSG="Sending a test...";loadLive();return op({op:"testPush"})}})
+ .then(function(r){PUSHMSG=r&&r.ok?"Test sent.":"";pushRefresh()})
+ .catch(function(e){PUSHMSG=e.message||String(e);pushRefresh()})}
+function pushOff(){if(!PUSHSUB)return;var ep=PUSHSUB.endpoint;PUSHSUB.unsubscribe().catch(function(){}).then(function(){PUSHSUB=null;return op({op:"pushUnsubscribe",endpoint:ep})}).then(loadLive)}
+function seen(){if(!TOK)return;try{navigator.clearAppBadge&&navigator.clearAppBadge()}catch(e){}op({op:"pushSeen"}).catch(function(){})}
+// #live=<match id>, #bugs=<bug id>, #files=<match id>: a notification's target.
+var HL="";
+function goHash(hash){var h=new URLSearchParams(String(hash||"").replace(/^#/,""));
+ if(h.has("live")){TAB="l";if(h.get("live"))OPEN[h.get("live")]=true;loadLive()}
+ else if(h.has("bugs")){TAB="g";HL=h.get("bugs")||""}
+ else if(h.has("files")){TAB="f";HL=h.get("files")||""}
+ else return false;
+ render();return true}
+function highlight(){if(!HL)return;var tds=app.querySelectorAll("td");for(var i=0;i<tds.length;i++){if(tds[i].textContent===HL){var tr=tds[i].parentNode;tr.style.outline="2px solid var(--acc)";tr.scrollIntoView({block:"center"});return}}}
 function fillBuilds(){var s=document.getElementById("build"),cur=s.value,all={};D.builds.concat(D.releases.map(function(x){return x.name})).forEach(function(b){all[b]=1});
  s.innerHTML='<option value="">All builds</option>'+Object.keys(all).sort().map(function(b){return '<option'+(b===cur?" selected":"")+'>'+esc(b)+'</option>'}).join("")}
 function table(cols,rows,fmt){if(!rows.length)return '<p class="muted">Nothing yet.</p>';return '<div class="wrap"><table><tr>'+cols.map(function(c){return "<th>"+esc(c)+"</th>"}).join("")+'</tr>'+rows.map(function(r){return "<tr>"+cols.map(function(c){return fmt&&fmt[c]?fmt[c](r[c],r):"<td>"+esc(r[c])+"</td>"}).join("")+"</tr>"}).join("")+'</table></div>'}
@@ -101,10 +137,12 @@ function render(){tabsEl.innerHTML=TABS.map(function(t){var n=t[0]==="t"&&D?D.te
  if(TAB==="o")h=table(["id","title","description","feature","points","trophy","until","completedBy"],D.objectives)+'<p class="muted">Objectives are rows of the Objectives table (Id, Title, Description, Feature, Points, Trophy, Active from, Active until, Stat, Compare, Target, Repeatable).</p>';
  if(TAB==="n")h='<p class="muted">E-mail is not set up on Cloudflare yet; these are the notifications that would have been sent.</p><div class="row">'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="'+(on?"ok":"")+'" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'" title="'+esc(s["What it means"])+'">'+esc(s.Event)+": "+(on?"on":"off")+'</button>'}).join("")+'</div>'+table(["Time","Event","Subject","Text"],D.pings,{Time:function(v){return "<td>"+day(v)+"</td>"},Text:function(v){return '<td class="pre">'+esc(v)+'</td>'}});
  if(TAB==="s")h=table(["name","added","sizeMb","stored"],D.releases,{added:function(v){return "<td>"+day(v)+"</td>"}});
- app.innerHTML=h}
+ app.innerHTML=h;highlight()}
 document.addEventListener("click",function(e){var t=e.target;
  if(t.dataset.tab){TAB=t.dataset.tab;ls("agetab",TAB);if(TAB==="l")loadLive();render();return}
- if(t.id==="testpush"){op({op:"testPush"}).then(function(r){if(r.ok)alert("Sent. It should show on your phone in a few seconds.")});return}
+ if(t.id==="pushon"){pushOn();return}
+ if(t.id==="pushoff"){pushOff();return}
+ if(t.id==="testpush"){PUSHMSG="Sending...";pushRefresh();op({op:"testPush"}).then(function(r){PUSHMSG=r.ok?"Test sent.":"";pushRefresh()});return}
  var o=t.closest&&t.closest("[data-open]");if(o&&!(t.closest(".det"))&&!t.dataset.set){var k=o.dataset.open;OPEN[k]=!OPEN[k];render();return}
  if(t.dataset.tester){op({op:"setTester",steamId:t.dataset.tester,status:t.dataset.st}).then(load);return}
  if(t.dataset.acc){op({op:"setAccess",type:t.dataset.acc,value:t.dataset.val,blocked:t.dataset.bl==="1"}).then(load);return}
@@ -115,9 +153,11 @@ document.addEventListener("click",function(e){var t=e.target;
  if(t.id==="out"){ls("ageadm",null);TOK=null;signIn();return}});
 document.addEventListener("change",function(e){var t=e.target;if(t.dataset.bug){op({op:"setBug",bugId:t.dataset.bug,status:t.value,points:t.value==="rejected"||t.value==="test"?0:undefined});return}if(t.id==="build")load()});
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
- TAB=location.hash==="#live"?"l":(ls("agetab")||"l");TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
- if(!TOK)return signIn();load();clearInterval(TIMER);TIMER=setInterval(function(){if(TAB==="l"&&!document.hidden)loadLive()},10000);
- document.addEventListener("visibilitychange",function(){if(!document.hidden&&TAB==="l")loadLive()})}
+ TAB=ls("agetab")||"l";TOK=ls("ageadm");if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
+ if(!TOK)return signIn();goHash(location.hash);load();seen();pushCheck();clearInterval(TIMER);TIMER=setInterval(function(){if(TAB==="l"&&!document.hidden)loadLive()},10000);
+ document.addEventListener("visibilitychange",function(){if(document.hidden)return;seen();if(TAB==="l")loadLive()});
+ if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",function(e){if(e.data&&e.data.open){goHash(new URL(e.data.open).hash);seen()}})}
+if(!window.AGE_API&&"serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 function pickApi(def){return fetch("../config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){var l=[c.api,c.fallback].filter(Boolean);function t(i){if(i>=l.length)return def;var u=String(l[i]).replace(/\/+$/,"");return fetch(u+"/?action=ping",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){return j&&"ok" in j?u:t(i+1)},function(){return t(i+1)})}return t(0)},function(){return def})}
 if(API)start();else pickApi("").then(function(u){API=u;if(!u){app.innerHTML="<p>Could not reach the playtest server.</p>";return}start()});
 })();
