@@ -89,65 +89,40 @@ footer{margin-top:36px;color:var(--faint);font-size:14px;letter-spacing:.08em}
 var C=window.AGE_CFG||{},app=document.getElementById("app"),whoEl=document.getElementById("who"),D=null,TOK=null;
 var DISCORD="https://discord.gg/w9Rv7sPRG";
 var MOBILE=/Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));
-var ICON_STEAM='<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.96 9.14l5.36 2.22a2.83 2.83 0 0 1 1.6-.49h.16l2.39-3.46v-.05a3.78 3.78 0 1 1 3.78 3.78h-.09l-3.4 2.43v.13a2.84 2.84 0 0 1-5.62.57L2.4 14.7A10 10 0 1 0 12 2zm-4.28 15.2-1.23-.5a2.13 2.13 0 1 0 1.17-2.9l1.27.52a1.57 1.57 0 1 1-1.2 2.9zm9.48-7.84a2.52 2.52 0 1 0-2.52 2.52 2.52 2.52 0 0 0 2.52-2.52zm-4.4 0a1.89 1.89 0 1 1 1.88 1.89 1.89 1.89 0 0 1-1.88-1.89z"/></svg>';
 var ICON_DC='<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.4 18.4 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.9 19.9 0 0 0 6 3l1.3-2.1a13 13 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.8 19.8 0 0 0 6-3c.5-5.2-.8-9.7-3.8-13.7zM8.5 15.4c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm7 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg>';
+var LAUNCHER="https://play.darkoasisgames.com/CyclesOfGenesisLauncher.exe";
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 function toast(t){var e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2600)}
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function vid(){var v=load("agevid");if(!v){v=Math.random().toString(36).slice(2,10);store("agevid",v)}return v}
 function meta(){return {visitor:vid(),ua:navigator.userAgent,lang:navigator.language,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||""),screen:screen.width+"x"+screen.height,ref:document.referrer,src:C.src||"site",path:location.pathname,wd:navigator.webdriver?"1":""}}
-function api(op,p){p=Object.assign({op:op},meta(),p||{});if(TOK)p.token=TOK;
- if(C.mode==="gas")return new Promise(function(res,rej){google.script.run.withSuccessHandler(res).withFailureHandler(rej).siteApi(p)});
+function api(op,p){p=Object.assign({op:op},meta(),p||{});
  var q=new URLSearchParams(p);q.set("action","site");return fetch(C.api+(/\/api$/.test(C.api)?"/?":"?")+q.toString()).then(function(r){return r.json()})}
-function selfUrl(){return C.mode==="gas"?C.self:location.origin+location.pathname}
-function steamUrl(){var rt=selfUrl()+(C.mode==="gas"?"?page=download":""),realm=C.mode==="gas"?"https://script.google.com":location.origin;
- var q={"openid.ns":"http://specs.openid.net/auth/2.0","openid.mode":"checkid_setup","openid.return_to":rt,"openid.realm":realm,"openid.identity":"http://specs.openid.net/auth/2.0/identifier_select","openid.claimed_id":"http://specs.openid.net/auth/2.0/identifier_select"};
- return "https://steamcommunity.com/openid/login?"+new URLSearchParams(q).toString()}
+function selfUrl(){return location.origin+location.pathname}
 function day(d){if(!d)return "";if(/^\d{4}-\d\d-\d\d$/.test(d))d+="T12:00:00";return new Date(d).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"})}
 function discordBtn(){return '<a class="btn alt" target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">'+ICON_DC+'Join the Discord</a>'}
-function err(e){app.innerHTML='<div class="panel"><h2>Something went wrong</h2><p class="dim">'+esc(e&&e.message||e||"Could not reach the playtest server.")+'</p><button class="btn" id="retry">Try again</button></div>';document.getElementById("retry").onclick=start}
-function setWho(){whoEl.innerHTML=D&&D.name?esc(D.name)+'<br><a id="out">Sign out</a>':"";var o=document.getElementById("out");if(o)o.onclick=function(){store("agetok",null);TOK=null;D=null;start()}}
-function signedOut(){app.innerHTML='<div class="panel"><h2>Closed playtest</h2><p>Cycles of Genesis is in a closed playtest. Sign in with your Steam account to get the download. If you\'re on the list, it\'s right there.</p>'
- +'<a class="btn big" href="'+esc(steamUrl())+'" target="_top">'+ICON_STEAM+'Sign in with Steam</a><p class="faint">You sign in on Steam\'s own page. We only receive your public Steam ID and name, never your password.</p></div>'
- +'<div class="panel"><h4>Want in?</h4><p class="dim">Sign in once so we know your Steam account, then ask in the Discord.</p>'+discordBtn()+'</div>'}
-function waiting(){var den=D.status==="denied";app.innerHTML='<div class="panel"><h2>'+(den?"Not in this round":"You're on the waiting list")+'</h2><p>Thanks, <b>'+esc(D.name)+'</b>. '
- +(den?"This playtest round is full or closed for your account. Keep an eye on the Discord for the next one.":"Your Steam account isn't on the playtest list yet. The developer has been told you asked. Say hi in the Discord to speed it up.")+'</p>'
- +discordBtn()+'<button class="btn" id="again">Check again</button></div>';document.getElementById("again").onclick=start}
 function notes(n){if(!n||!n.cats||!n.cats.length)return '<p class="dim">No patch notes for this build.</p>';return n.cats.map(function(c){return '<div class="cat"><b>'+esc(c.name)+'</b><ul>'+c.items.map(function(i){return "<li>"+esc(i)+"</li>"}).join("")+'</ul></div>'}).join("")}
-function dlBlock(b){if(!MOBILE)return '<a class="btn big" href="https://play.darkoasisgames.com/CyclesOfGenesisLauncher.exe" download>Download the launcher</a><p class="faint">Windows · 1 MB · installs this build, keeps it updated and switches between builds</p><p class="faint">Already on launcher 1.0.5? Download this once by hand. Later versions update themselves.</p><p class="faint"><a href="#" data-dl="'+esc(b.name)+'">Or download the zip instead</a> ('+b.sizeMb+' MB)</p>';
- var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Cycles of Genesis runs on Windows PCs, so download it there: open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC and sign in with Steam.</div>'
- +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Cycles of Genesis playtest download")+'&body='+encodeURIComponent("Open this on my Windows PC and sign in with Steam: "+link)+'">Email me the link</a>'
- +'<button class="btn" id="copy">Copy link</button><p class="faint"><a href="#" data-dl="'+esc(b.name)+'">Download here anyway</a> ('+b.sizeMb+' MB)</p>'}
-function full(){var b=D.builds[0],h="";
- if(!b)h+='<div class="panel"><h2>No build yet</h2><p class="dim">The next playtest build is on its way. Check the Discord.</p>'+discordBtn()+'</div>';
- else{h+='<div class="panel"><div class="tag">Latest build</div><h2>'+esc(b.name)+'</h2><p class="dim">Released '+day((b.notes&&b.notes.date)||b.added)+'</p>'+dlBlock(b)+'</div>';
-  h+='<h3>How to install and play</h3><div class="panel"><ol class="steps"><li><b>Open Steam and sign in.</b> Keep it running the whole time, or the game won\'t start.</li><li><b>Download the launcher</b> above on your Windows PC and run <b>CyclesOfGenesisLauncher.exe</b>.</li><li>If Windows shows <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>. The playtest isn\'t signed yet.</li><li>Press <b>Sign in</b> in the launcher and sign in with Steam in your browser. It downloads the latest build, then press <b>Play</b>. New builds show up there by themselves.</li><li>Logs and replays upload by themselves. Found a bug? Use <b>REPORT BUG</b> in the main menu or the pause menu.</li><li>Stuck, or want to talk bugs and balance? Ask in the <a target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">Discord</a>.</li></ol><details><summary>Using the zip instead</summary><ol class="steps"><li>Download the zip above, then in your Downloads folder <b>right-click it &gt; Extract All</b>, somewhere easy like your Desktop.</li><li>Open the extracted folder and double-click the <b>Play</b> .bat file. Steam must be open.</li></ol></details></div>';
-  h+='<h3>What\'s new</h3><div class="panel">'+notes(b.notes)+'</div>'}
- if(D.objectives&&D.objectives.length)h+='<h3>This week\'s objectives</h3><div class="grid">'+D.objectives.map(function(o){return '<div class="panel"><h4>'+esc(o.title)+'</h4><p class="dim">'+esc(o.description)+'</p><div class="row"><span><span class="pts">'+o.points+' pts</span>'+(o.trophy?' · <span class="trophy">'+esc(o.trophy)+'</span>':'')+'</span><span>'+o.completedBy+' done</span></div></div>'}).join("")+'</div>';
- var boards=(D.boards||[]).filter(function(x){return x.entries.length});if(D.season&&D.season.length)boards.unshift({title:"Season points",unit:"pts",entries:D.season});
- if(boards.length)h+='<h3>Leaderboards</h3><div class="grid">'+boards.map(function(x){return '<div class="panel"><h4>'+esc(x.title)+'</h4>'+x.entries.map(function(e,i){return '<div class="row"><span>'+(i+1)+'. '+esc(e.player)+'</span><span>'+e.value+(x.unit?" "+esc(x.unit):"")+'</span></div>'}).join("")+'</div>'}).join("")+'</div>';
- h+='<h3>Community</h3><div class="panel"><p>Chat with other testers and report problems that aren\'t in-game bugs.</p>'+discordBtn()+'</div>';
- h+='<h3>What the playtest collects</h3><div class="panel"><ul><li>Game logs and crash logs</li><li>Replays of your matches</li><li>Match stats and settings (map, AI, lobby and pause-menu settings, what you built and used)</li><li>PC specs (CPU, GPU, RAM), only while <b>SHARE PC SPECS</b> is on</li><li>Performance (frame rate, frame times)</li><li>Your Steam name and Steam ID, so leaderboards and objectives follow you between builds</li><li>Bug reports and screenshots you send</li></ul><p class="dim"><b>Why:</b> to find bugs and balance the game. <b>Where:</b> the developer\'s private Google Drive. Nothing is sold or shared. Change <b>UPLOADS</b> and <b>SHARE PC SPECS</b> any time under <b>DATA &amp; PRIVACY</b> in the game\'s main menu.</p></div>';
- if(D.builds.length>1)h+='<h3>Older builds</h3><div class="panel">'+D.builds.slice(1).map(function(o){return '<details><summary>'+esc(o.name)+' <span class="dim">'+day((o.notes&&o.notes.date)||o.added)+' · '+o.sizeMb+' MB</span></summary><p><a href="#" data-dl="'+esc(o.name)+'">Download '+esc(o.name)+'</a></p>'+notes(o.notes)+'</details>'}).join("")+'</div>';
+// The launcher is public; the game builds it installs need an invite code, typed into the launcher.
+function dlBlock(){if(!MOBILE)return '<a class="btn big" href="'+LAUNCHER+'" download data-ev="launcher">Download the launcher</a><p class="faint">Windows · 1 MB · installs the playtest, keeps it updated and switches between builds</p>';
+ var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Cycles of Genesis runs on Windows PCs. Open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC to get the launcher.</div>'
+ +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Cycles of Genesis playtest")+'&body='+encodeURIComponent("Get the launcher on my Windows PC: "+link)+'">Email me the link</a>'
+ +'<button class="btn" id="copy">Copy link</button>'}
+function render(){var b=D&&D.latest,h="";
+ h+='<div class="panel"><h2>Closed playtest</h2><p>Cycles of Genesis is in a closed playtest. If you have an <b>invite code</b>, download the launcher, open it and type the code in. That\'s all: no account or sign-in.</p>'+dlBlock()+'</div>';
+ h+='<h3>How to install and play</h3><div class="panel"><ol class="steps"><li><b>Download the launcher</b> above on your Windows PC and run <b>CyclesOfGenesisLauncher.exe</b>.</li><li>If Windows shows <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>. The playtest isn\'t signed yet.</li><li><b>Type your invite code</b> (it looks like CYCL-XXXX-XXXX). Each code works once, on one PC.</li><li>The launcher downloads the latest build. Press <b>Play</b>. New builds show up there by themselves.</li><li>Logs and replays upload by themselves. Found a bug? Use <b>REPORT BUG</b> in the main menu or the pause menu.</li><li>Stuck, or want to talk bugs and balance? Ask in the <a target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">Discord</a>.</li></ol></div>';
+ h+='<h3>Want in?</h3><div class="panel"><p class="dim">Invite codes go out in the Discord. Say hi there and ask.</p>'+discordBtn()+'</div>';
+ if(b)h+='<h3>What\'s new in '+esc(b.name)+'</h3><div class="panel"><p class="dim">Released '+day((b.notes&&b.notes.date)||b.added)+'</p>'+notes(b.notes)+'</div>';
+ h+='<h3>What the playtest collects</h3><div class="panel"><ul><li>Game logs and crash logs</li><li>Replays of your matches</li><li>Match stats and settings (map, AI, lobby and pause-menu settings, what you built and used)</li><li>PC specs (CPU, GPU, RAM), only while <b>SHARE PC SPECS</b> is on</li><li>Performance (frame rate, frame times)</li><li>Your in-game name and a tester id from your invite, so leaderboards and objectives follow you between builds</li><li>Bug reports, screenshots and short clips you send</li></ul><p class="dim"><b>Why:</b> to find bugs and balance the game. <b>Where:</b> the developer\'s private storage. Nothing is sold or shared. Change <b>UPLOADS</b> and <b>SHARE PC SPECS</b> any time under <b>DATA &amp; PRIVACY</b> in the game\'s main menu.</p></div>';
  app.innerHTML=h;var c=document.getElementById("copy");if(c)c.onclick=function(){var l=selfUrl();(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){toast("Link copied")},function(){prompt("Copy this link:",l)})}}
-function render(){setWho();if(!D||D.status==="signedout")return signedOut();if(D.status!=="approved")return waiting();full()}
-document.addEventListener("click",function(e){var d=e.target.closest("[data-dl]");if(d){e.preventDefault();download(d,d.dataset.dl);return}
- if(e.target.closest('[data-ev="discord"]'))api("ev",{event:"discord"}).catch(function(){})});
-function download(el,build){var old=el.innerHTML;el.setAttribute("disabled","");el.innerHTML='<span class="spin"></span>Preparing your download…';
- api("dl",{build:build}).then(function(r){el.removeAttribute("disabled");el.innerHTML=old;if(!r||!r.ok){toast(r&&r.error||"Download failed");if(r&&r.signin){store("agetok",null);TOK=null;start()}return}
-  if(C.mode==="gas"){var a=document.createElement("a");a.className=el.className||"btn";a.href=r.url;a.target="_blank";a.rel="noopener";a.textContent="Click to download";el.replaceWith(a);toast("Ready. The link works for 30 minutes.");return}
-  location.href=r.url;toast("Download starting. The link works for 30 minutes.")}).catch(function(e){el.removeAttribute("disabled");el.innerHTML=old;toast("Download failed: "+(e&&e.message||e))})}
-function openidParams(){var src=C.openid||null;if(!src){var q=new URLSearchParams(location.search);if(!q.get("openid.mode"))return null;src={};q.forEach(function(v,k){if(k.indexOf("openid.")===0)src[k]=v})}return src&&src["openid.mode"]?src:null}
-function start(){TOK=load("agetok");app.innerHTML='<div class="panel"><span class="spin"></span>Loading…</div>';
- var oid=openidParams();
- var p=oid?api("steam",oid).then(function(r){if(C.mode!=="gas")history.replaceState(null,"",location.pathname);if(r&&r.token){TOK=r.token;store("agetok",r.token)}return r.ok?api("home"):r}):api("home");
- C.openid=null;
- p.then(function(r){if(!r||!r.ok){if(r&&r.signin){store("agetok",null);TOK=null;D={status:"signedout"};return render()}return err(r&&r.error)}D=r;if(D.discord)DISCORD=D.discord;document.getElementById("discordFoot").href=DISCORD;if(D.status==="signedout"){store("agetok",null);TOK=null}render()}).catch(err)}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-ev]");if(t)api("ev",{event:t.dataset.ev}).catch(function(){})});
+function start(){store("agetok",null);render();
+ // Public bits only (the latest build's notes); the page works without them.
+ api("home").then(function(r){if(r&&r.ok){D=r;if(D.discord)DISCORD=D.discord;document.getElementById("discordFoot").href=DISCORD;render()}}).catch(function(){})}
 document.getElementById("discordFoot").href=DISCORD;
-// config.json {"api": "<backend url>"} picks the backend; without it, the Apps Script URL above.
+// config.json {"api": "<backend url>", "fallback": ...} picks the backend.
 function pickApi(def){return fetch("config.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){var l=[c.api,c.fallback].filter(Boolean);function t(i){if(i>=l.length)return def;var u=String(l[i]).replace(/\/+$/,"");return fetch(u+"/?action=ping",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){return j&&"ok" in j?u:t(i+1)},function(){return t(i+1)})}return t(0)},function(){return def})}
-if(C.mode==="gas")start();else pickApi(C.api).then(function(u){C.api=u}).then(start);
+pickApi(C.api).then(function(u){C.api=u}).then(start);
 })();
 </script>
 </body>
