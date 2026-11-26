@@ -163,9 +163,10 @@ function allMatches(){var o={};(D?D.matches:[]).forEach(function(m){o[m["Match i
 function liveSecs(m){return Math.max.apply(null,(m.live||[]).map(function(r){return Number(r["Game seconds"])||0}).concat([0]))}
 function resultCls(r){r=String(r||"").toLowerCase();return /won|victory/.test(r)?"win":/lost|defeat/.test(r)?"loss":"dim"}
 function keyLabel(id){var k=(D&&D.keys||[]).filter(function(x){return x.Id===id})[0];return k?(k.Label||k.Id):""}
-function people(){var o={};function g(n){return o[n]=o[n]||{name:n}}
+function isAi(n){return /^(computer|ai)( \d+)?$/i.test(String(n||"").trim())}
+function people(){var o={},al=(D&&D.aliases)||{};function g(n){n=String(n||"").trim();n=al[n.toLowerCase()]||n;var k=n.toLowerCase(),x=o[k]=o[k]||{name:n};if(x.name===x.name.toUpperCase()&&n!==n.toUpperCase())x.name=n;return x}
  (D&&D.keys||[]).forEach(function(k){g(k.Label||k.Id).key=k});
- (D?D.players:[]).forEach(function(p){var n=D.who&&D.who[p.player]?keyLabel(D.who[p.player]):"";g(n||p.player).stats=p;if(n&&n!==p.player)o[n].plays=p.player});
+ (D?D.players:[]).forEach(function(p){if(isAi(p.player))return;var n=D.who&&D.who[p.player]?keyLabel(D.who[p.player]):"",x=g(n||p.player);x.stats=p;if(n&&n.toLowerCase()!==String(p.player).toLowerCase())x.plays=p.player});
  (D?D.testers:[]).forEach(function(t){if(t.Status==="requested")return;g(t.Name||t["Steam id"]).tester=t});
  return Object.keys(o).map(function(k){return o[k]}).sort(function(a,b){return ((b.stats||{}).matches||0)-((a.stats||{}).matches||0)||a.name.localeCompare(b.name)})}
 function specLine(s){return s?join([s.gpu,s.resolution,s.preset]):""}
@@ -186,6 +187,7 @@ function tog(on,attrs){return '<span class="tog'+(on?" on":"")+'" role="switch" 
 // ---------- Now ----------
 function viewNow(){var lv=LV||{matches:[],recent:[]},rq=requested().length,nb=newBugs().length;
  var h=top("Now",LV?plural(lv.matches.length,"match")+" running":"Loading…");
+ if(D&&D.launcherBlock)h+='<div class="card" style="border-color:var(--red)"><div class="nm" style="color:var(--red)">Launcher downloads are paused</div><div class="sm" style="white-space:normal">The tamper alarm found the public launcher did not match your release signature: '+esc(D.launcherBlock.why||"")+' ('+esc(ago(D.launcherBlock.at))+'). Replace the launcher with your signed release first, then turn downloads back on.</div><button class="pill" style="margin-top:10px" data-unblock="1">Re-enable downloads</button></div>';
  h+='<div class="att"><button class="'+(rq?"":"zero")+'" data-go="players"><div class="n">'+rq+'</div><div class="t">Testers waiting</div></button><button class="'+(nb?"":"zero")+'" data-go="reports" data-sub="bugs"><div class="n">'+nb+'</div><div class="t">New bugs</div></button></div>';
  h+='<h2>Live</h2>';
  if(!lv.matches.length)h+='<div class="card empty">Nobody is in a match right now. You\'ll get a notification when one starts.</div>';
@@ -395,6 +397,7 @@ window.addEventListener("popstate",function(e){DET=e.state&&e.state.det||null;re
 document.addEventListener("click",function(e){var t=e.target.closest("button,a,[data-det]");if(!t)return;var d=t.dataset;
  if(d.tab){go(d.tab);return}
  if(d.vall){VALL=!VALL;render();return}
+ if(d.unblock){op({op:"launcherUnblock"}).then(function(r){if(r.ok){D.launcherBlock=null;render();toast("Launcher downloads are back on.")}else toast(r.error||"Failed")});return}
  if(d.go){go(d.go,d.sub);return}
  if(d.sub&&!d.go){SUB=d.sub;render();return}
  if(d.objed){OBJED=d.objed;render();return}
