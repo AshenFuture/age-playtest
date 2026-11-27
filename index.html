@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cycles of Genesis playtest</title>
-<meta name="description" content="Closed playtest of Cycles of Genesis by Dark Oasis Games.">
+<title>Dark Oasis Title 1 playtest</title>
+<meta name="description" content="Closed playtest of Dark Oasis Title 1 by Dark Oasis Games.">
 <meta name="theme-color" content="#03060c">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -79,9 +79,9 @@ footer{margin-top:36px;color:var(--faint);font-size:14px;letter-spacing:.08em}
 <body>
 <div class="sky" aria-hidden="true"><div class="stars"></div><div class="stars2"></div><div class="planet"></div></div>
 <div class="wrap">
-<header><div><h1 class="logo"><span class="pre">Cycles of</span>GENESIS</h1><div class="tag">Closed playtest</div></div><div class="who" id="who"></div></header>
+<header><div><h1 class="logo"><span class="pre">Dark Oasis</span>TITLE 1</h1><div class="tag">Closed playtest</div></div><div class="who" id="who"></div></header>
 <main id="app"><div class="panel"><span class="spin"></span>Loading…</div></main>
-<footer>Cycles of Genesis by Dark Oasis Games · <a id="discordFoot" target="_blank" rel="noopener">Discord</a></footer>
+<footer>Dark Oasis Title 1 by Dark Oasis Games · <a id="discordFoot" target="_blank" rel="noopener">Discord</a></footer>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -105,11 +105,11 @@ function discordBtn(){return '<a class="btn alt" target="_blank" rel="noopener" 
 function notes(n){if(!n||!n.cats||!n.cats.length)return '<p class="dim">No patch notes for this build.</p>';return n.cats.map(function(c){return '<div class="cat"><b>'+esc(c.name)+'</b><ul>'+c.items.map(function(i){return "<li>"+esc(i)+"</li>"}).join("")+'</ul></div>'}).join("")}
 // The launcher is public; the game builds it installs need an invite code, typed into the launcher.
 function dlBlock(){if(!MOBILE)return '<a class="btn big" href="'+LAUNCHER+'" download data-ev="launcher">Download the launcher</a><p class="faint">Windows · 1 MB · installs the playtest, keeps it updated and switches between builds</p>';
- var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Cycles of Genesis runs on Windows PCs. Open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC to get the launcher.</div>'
- +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Cycles of Genesis playtest")+'&body='+encodeURIComponent("Get the launcher on my Windows PC: "+link)+'">Email me the link</a>'
+ var link=selfUrl();return '<div class="note"><b>You\'re on a phone.</b> Dark Oasis Title 1 runs on Windows PCs. Open <span class="hl">'+esc(link.replace(/^https?:\/\//,""))+'</span> on your PC to get the launcher.</div>'
+ +'<a class="btn" target="_top" href="mailto:?subject='+encodeURIComponent("Dark Oasis Title 1 playtest")+'&body='+encodeURIComponent("Get the launcher on my Windows PC: "+link)+'">Email me the link</a>'
  +'<button class="btn" id="copy">Copy link</button>'}
 function render(){var b=D&&D.latest,h="";
- h+='<div class="panel"><h2>Closed playtest</h2><p>Cycles of Genesis is in a closed playtest. If you have an <b>invite code</b>, download the launcher, open it and type the code in. That\'s all: no account or sign-in.</p>'+dlBlock()+'</div>';
+ h+='<div class="panel"><h2>Closed playtest</h2><p>Dark Oasis Title 1 is in a closed playtest. If you have an <b>invite code</b>, download the launcher, open it and type the code in. That\'s all: no account or sign-in.</p>'+dlBlock()+'</div>';
  h+='<h3>How to install and play</h3><div class="panel"><ol class="steps"><li><b>Download the launcher</b> above on your Windows PC and run <b>CyclesOfGenesisLauncher.exe</b>.</li><li>If Windows shows <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>. The playtest isn\'t signed yet.</li><li><b>Type your invite code</b> (it looks like CYCL-XXXX-XXXX). Each code works once, on one PC.</li><li>The launcher downloads the latest build. Press <b>Play</b>. New builds show up there by themselves.</li><li>Logs and replays upload by themselves. Found a bug? Use <b>REPORT BUG</b> in the main menu or the pause menu.</li><li>Stuck, or want to talk bugs and balance? Ask in the <a target="_blank" rel="noopener" data-ev="discord" href="'+esc(DISCORD)+'">Discord</a>.</li></ol></div>';
  h+='<h3>Want in?</h3><div class="panel"><p class="dim">Invite codes go out in the Discord. Say hi there and ask.</p>'+discordBtn()+'</div>';
  if(b)h+='<h3>What\'s new in '+esc(b.name)+'</h3><div class="panel"><p class="dim">Released '+day((b.notes&&b.notes.date)||b.added)+'</p>'+notes(b.notes)+'</div>';
