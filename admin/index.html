@@ -406,28 +406,47 @@ function vWhat(v){var e=v.Event||"",b=v.Build||"";
  return e}
 function vIsDownload(v){return /^(download|launcher|launcher-file)$/.test(v.Event||"")}
 function vKey(v){var w=v["IP hash"]&&IPWHO[v["IP hash"]];if(w)return "n:"+w;if(v.Kind==="us")return "n:You";if(v.Tester)return "n:"+v.Tester;return v["Tester id"]?"t:"+v["Tester id"]:v["IP hash"]?"ip:"+v["IP hash"]:"v:"+(v.Visitor||v.Time)}
-var SITEF="people";
-function viewSite(){ipWho();var all=(D?D.visits:[]).map(function(v){return [v,vKind(v)]}),wk=Date.now()-7*86400000;
- var h=top("Site",D?"Who is doing what, last 7 days":"Loading…");if(!D)return h;
- var recent=all.filter(function(x){return new Date(x[0].Time)>wk});
- var n={views:0,launcher:0,builds:0,bots:0};recent.forEach(function(x){var v=x[0];if(isBot(x[1])){n.bots++;return}
-  if(v.Event==="view")n.views++;else if(v.Event==="launcher-file"||v.Event==="launcher")n.launcher++;else if(v.Event==="download")n.builds++});
- h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+[[n.views,"Page visits"],[n.launcher,"Launcher downloads"],[n.builds,"Build downloads"],[n.bots,"Bot visits"]].map(function(x){return '<div style="border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:10px 6px;text-align:center"><div style="font:700 24px/1 var(--disp);color:'+(x[0]?"var(--gold)":"var(--faint)")+'">'+x[0]+'</div><div class="sm" style="white-space:normal;margin-top:4px">'+x[1]+'</div></div>'}).join("")+'</div>';
- // Who: one line per person this week (you, testers, visitors) with what they did.
- var ppl={},order=[];recent.forEach(function(x){if(isBot(x[1]))return;var k=vKey(x[0]);if(!ppl[k]){ppl[k]={who:k.slice(0,2)==="n:"?k.slice(2):vWho(x[0],x[1]),acts:{},last:x[0].Time};order.push(k)}var w=vWhat(x[0]);ppl[k].acts[w]=(ppl[k].acts[w]||0)+1});
- h+='<h2>Who, this week</h2>'+(order.length?'<div class="list">'+order.map(function(k){var p=ppl[k];
-  return '<div class="row"><div class="grow"><div class="nm">'+esc(p.who)+'</div><div class="sm" style="white-space:normal">'+esc(Object.keys(p.acts).map(function(a){return a+(p.acts[a]>1?" ×"+p.acts[a]:"")}).join(" · "))+'</div></div><span class="sm" style="flex:none">'+esc(ago(p.last))+'</span></div>'}).join("")+'</div>':'<div class="card empty">Nobody yet this week.</div>');
- // Activity: every event, newest first, filtered.
- var F=[["people","People"],["downloads","Downloads"],["bots","Bots"],["all","All"]];
- h+='<h2>Activity</h2><div style="display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap">'+F.map(function(f){return '<button class="pill" data-sitef="'+f[0]+'"'+(SITEF===f[0]?' style="color:var(--gold);border-color:var(--gold-l)"':"")+'>'+f[1]+'</button>'}).join("")+'</div>';
- var list=all.filter(function(x){var b=isBot(x[1]);return SITEF==="all"||(SITEF==="bots"?b:SITEF==="downloads"?!b&&vIsDownload(x[0]):!b)});
- h+=list.length?'<div class="list">'+list.slice(0,300).map(function(x){var v=x[0],k=x[1],b=isBot(k),bw=b?botWhat(v):null;
-  var tag=k==="us"?"you":k==="tester"?"tester":b?"bot":"visitor";
-  return '<div class="row"><div class="grow"><div class="nm">'+esc(vWho(v,k))+'</div><div class="sm" style="white-space:normal">'+esc(vWhat(v))+'</div>'
-   +(bw?'<div class="sm dim" style="white-space:normal">'+esc(bw[1])+'</div>':"")
-   +'<div class="sm dim">'+esc(join([countryName(v.Country),b?"":v.Network,v.Device,v.OS,v.Browser,v.Referrer?"from "+v.Referrer:""]))+'</div></div>'
-   +'<span class="tag'+(tag==="you"||tag==="tester"?" approved":"")+'">'+esc(tag)+'</span><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">Nothing here yet.</div>';
+// Visitors: every person or bot grouped (by tester, by you, by connection), newest first.
+function siteVisitors(){ipWho();var g={},order=[];(D?D.visits:[]).forEach(function(v){var k=vKind(v),key=vKey(v);
+  if(!g[key]){g[key]={key:key,who:key.slice(0,2)==="n:"?key.slice(2):vWho(v,k),bot:isBot(k),kind:k,rows:[],days:{},last:v.Time,first:v.Time,v:v};order.push(key)}
+  var x=g[key];x.rows.push(v);x.days[String(v.Time).slice(0,10)]=1;if(v.Time<x.first)x.first=v.Time;if(v.Time>x.last)x.last=v.Time});
+ return order.map(function(k){var x=g[k];x.visits=Object.keys(x.days).length;return x})}
+// Launcher downloads, counted once per visitor per day (a button click and the file itself are one download).
+function siteStats(rows){var n={views:[0,0],launcher:[0,0],builds:[0,0]},seen={};rows.forEach(function(x){var v=x[0],b=isBot(x[1])?1:0;
+  if(v.Event==="view")n.views[b]++;else if(v.Event==="download")n.builds[b]++;
+  else if(v.Event==="launcher"||v.Event==="launcher-file"){var d=vKey(v)+String(v.Time).slice(0,10);if(!seen[d]){seen[d]=1;n.launcher[b]++}}});return n}
+var SITEV="visitors",SITEF="people",SITEBOTS=false;
+function visitorRow(x){var acts={};x.rows.forEach(function(v){var w=vWhat(v);acts[w]=(acts[w]||0)+1});
+ var sum=Object.keys(acts).slice(0,3).map(function(a){return a+(acts[a]>1?" ×"+acts[a]:"")}).join(" · ");
+ return '<button class="row" data-det="visitor" data-id="'+esc(x.key)+'"><div class="grow"><div class="nm">'+esc(x.who)+'</div><div class="sm" style="white-space:normal">'+esc((x.visits>1?"Came back on "+x.visits+" days · ":"")+sum)+'</div></div>'
+  +(x.visits>1?'<span class="tag approved">'+x.visits+' days</span>':"")+'<span class="sm" style="flex:none">'+esc(ago(x.last))+'</span>'+chev+'</button>'}
+function viewSite(){ipWho();var h=top("Site",D?"Who visits the playtest site, and what they do":"Loading…");if(!D)return h;
+ var all=D.visits.map(function(v){return [v,vKind(v)]}),wk=Date.now()-7*86400000,n=siteStats(all.filter(function(x){return new Date(x[0].Time)>wk}));
+ function card(label,p){return '<div style="border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:10px 8px"><div class="sm">'+label+'</div><div style="display:flex;gap:12px;margin-top:6px"><div><div style="font:700 24px/1 var(--disp);color:'+(p[0]?"var(--gold)":"var(--faint)")+'">'+p[0]+'</div><div class="sm">people</div></div><div><div style="font:700 24px/1 var(--disp);color:var(--faint)">'+p[1]+'</div><div class="sm">bots</div></div></div></div>'}
+ h+='<div class="sm" style="padding:0 4px 6px">Last 7 days</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+card("Page visits",n.views)+card("Launcher downloads",n.launcher)+card("Build downloads",n.builds)+'</div>';
+ h+='<div style="display:flex;gap:8px;margin:14px 0 10px">'+[["visitors","Visitors"],["activity","All activity"]].map(function(f){return '<button class="pill" data-sitev="'+f[0]+'"'+(SITEV===f[0]?' style="color:var(--gold);border-color:var(--gold-l)"':"")+'>'+f[1]+'</button>'}).join("")+'</div>';
+ if(SITEV==="visitors"){var vs=siteVisitors(),ppl=vs.filter(function(x){return !x.bot}),bots=vs.filter(function(x){return x.bot});
+  ppl.sort(function(a,b){return (b.visits-a.visits)||(a.last<b.last?1:-1)});
+  h+='<h2>People</h2><p class="sm" style="white-space:normal;padding:0 4px 8px">Repeat visitors first. Tap one to see everything they did.</p>'+(ppl.length?'<div class="list">'+ppl.map(visitorRow).join("")+'</div>':'<div class="card empty">No people yet.</div>');
+  h+='<h2>Bots</h2><button class="pill" data-sitebots="1" style="margin:0 0 10px">'+(SITEBOTS?"Hide":"Show")+' '+plural(bots.length,"bot")+'</button>'+(SITEBOTS&&bots.length?'<div class="list">'+bots.map(visitorRow).join("")+'</div>':"");
+ } else {
+  var F=[["people","People"],["downloads","Downloads"],["bots","Bots"],["all","All"]];
+  h+='<div style="display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap">'+F.map(function(f){return '<button class="pill" data-sitef="'+f[0]+'"'+(SITEF===f[0]?' style="color:var(--gold);border-color:var(--gold-l)"':"")+'>'+f[1]+'</button>'}).join("")+'</div>';
+  var list=all.filter(function(x){var b=isBot(x[1]);return SITEF==="all"||(SITEF==="bots"?b:SITEF==="downloads"?vIsDownload(x[0]):!b)});
+  h+=list.length?'<div class="list">'+list.slice(0,300).map(function(x){return actRow(x[0],x[1],true)}).join("")+'</div>':'<div class="card empty">Nothing here yet.</div>';
+ }
  return h+'<p class="sm" style="white-space:normal;padding:4px">Attempts to open hidden files (like .env or WordPress pages) are blocked by Cloudflare before they reach the site, so they are not listed here.</p>'}
+function actRow(v,k,withWho){var b=isBot(k),bw=b?botWhat(v):null,tag=k==="us"?"you":k==="tester"?"tester":b?"bot":"visitor";
+ return '<div class="row"><div class="grow">'+(withWho?'<div class="nm">'+esc(vWho(v,k))+'</div>':"")+'<div class="'+(withWho?"sm":"nm")+'" style="white-space:normal">'+esc(vWhat(v))+'</div>'
+  +(bw&&withWho?'<div class="sm dim" style="white-space:normal">'+esc(bw[1])+'</div>':"")
+  +'<div class="sm dim">'+esc(join([countryName(v.Country),b?"":v.Network,v.Device,v.OS,v.Browser,v.Referrer?"from "+v.Referrer:""]))+'</div></div>'
+  +(withWho?'<span class="tag'+(tag==="you"||tag==="tester"?" approved":"")+'">'+esc(tag)+'</span>':"")+'<span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}
+function detVisitor(id){var x=siteVisitors().filter(function(y){return y.key===id})[0];var h=backBar("Site");if(!x)return h+'<div class="card empty">Not found.</div>';
+ var v=x.v,bw=x.bot?botWhat(v):null;
+ h+='<div class="dh"><h1>'+esc(x.who)+'</h1><div class="sub" style="white-space:normal">'+esc(join([plural(x.rows.length,"event"),x.visits>1?"on "+x.visits+" different days":"one day","first seen "+ago(x.first)]))+'</div></div>';
+ if(bw)h+='<div class="card"><div class="nm">What this bot was doing</div><div class="sm" style="white-space:normal">'+esc(bw[1])+'</div></div>';
+ h+='<div class="card"><div class="sm" style="white-space:normal">'+esc(join([countryName(v.Country),v.Network,v.Device,v.OS,v.Browser,v["Time zone"],v.Screen]))+'</div></div>';
+ return h+'<h2>Everything they did</h2><div class="list">'+x.rows.map(function(r){return actRow(r,vKind(r),false)}).join("")+'</div>'}
 function detPings(){var h=backBar("More")+'<div class="dh"><h1>E-mail log</h1><div class="sub" style="white-space:normal">E-mail isn\'t set up yet. These are the e-mails that would have gone out.</div></div>';
  h+='<details class="card"><summary><span>Which e-mails to log</span></summary><div>'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="acc" style="padding-left:0;padding-right:0" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'"><div class="grow"><div>'+esc(s.Event)+'</div><div class="sm" style="white-space:normal">'+esc(s["What it means"])+'</div></div>'+tog(on,"")+'</button>'}).join("")+'</div></details>';
  return h+(D.pings.length?D.pings.map(function(p){return '<div class="card"><div class="nm" style="white-space:normal">'+esc(String(p.Subject||"").replace(/^\[Age\] /,""))+'</div><div class="sm">'+esc(join([p.Event,ago(p.Time)]))+'</div><div class="txt sm" style="white-space:pre-wrap">'+esc(p.Text)+'</div></div>'}).join(""):'<div class="card empty">Nothing logged yet.</div>')}
@@ -438,7 +457,7 @@ function render(){if(!TOK)return;bar.hidden=false;
  setBadge("bdp",rq);setBadge("bdr",nb);
  [].forEach.call(bar.querySelectorAll(".tab"),function(t){t.classList.toggle("on",t.dataset.tab===TAB)});
  var a=document.activeElement,keepQ=a&&a.id==="q",pos=keepQ?a.selectionStart:0,h;
- if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,invite:detInvite,releases:detReleases,objectives:detObjectives,visits:viewSite,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
+ if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,invite:detInvite,releases:detReleases,objectives:detObjectives,visits:viewSite,visitor:detVisitor,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
  else h=({now:viewNow,players:viewPlayers,reports:viewReports,site:viewSite,more:viewMore}[TAB])();
  app.innerHTML=h;
  if(keepQ){var q=document.getElementById("q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(e){}}}
@@ -453,6 +472,8 @@ document.addEventListener("click",function(e){var t=e.target.closest("button,a,[
  if(d.tab){go(d.tab);return}
  if(d.psort){PSORT=d.psort;ls("agepsort",PSORT);render();return}
  if(d.sitef){SITEF=d.sitef;render();return}
+ if(d.sitev){SITEV=d.sitev;render();return}
+ if(d.sitebots){SITEBOTS=!SITEBOTS;render();return}
  if(d.unblock){op({op:"launcherUnblock"}).then(function(r){if(r.ok){D.launcherBlock=null;render();toast("Launcher downloads are back on.")}else toast(r.error||"Failed")});return}
  if(d.go){go(d.go,d.sub);return}
  if(d.sub&&!d.go){SUB=d.sub;render();return}
