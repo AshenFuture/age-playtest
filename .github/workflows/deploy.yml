@@ -19,6 +19,18 @@ jobs:
       - name: Skip if no token yet
         if: env.CLOUDFLARE_API_TOKEN == ''
         run: echo "::warning::CLOUDFLARE_API_TOKEN secret not set, skipping deploy"
+      # Never roll the launcher back: a deploy whose launcher-version.json is older than the live one
+      # (e.g. main missing a release that went out another way) would trip the tamper alarm and pause
+      # downloads. Every launcher release goes through main; fix main instead of deploying.
+      - name: Refuse a launcher rollback
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          live=$(curl -fsS "https://age-playtest-site.pages.dev/launcher-version.json?ci=$GITHUB_RUN_ID" | jq -r .version || echo 0)
+          new=$(jq -r .version launcher-version.json)
+          echo "live launcher $live, this deploy $new"
+          if [ "$(printf '%s\n%s\n' "$live" "$new" | sort -V | head -1)" != "$live" ]; then
+            echo "::error::launcher-version.json $new is older than the live $live. Put the newer release on main first."; exit 1
+          fi
       - name: Deploy repo to age-playtest-site
         if: env.CLOUDFLARE_API_TOKEN != ''
         run: mkdir dist && git archive HEAD | tar -x -C dist && rm -rf dist/.github && npx --yes wrangler@4 pages deploy dist --project-name=age-playtest-site --branch=main --commit-hash="$GITHUB_SHA" --commit-message="$(git log -1 --pretty=%s)" --commit-dirty=true
