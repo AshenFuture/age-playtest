@@ -45,6 +45,10 @@ h2 small{font:500 13px system-ui;color:var(--faint)}
 .list{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:10px}
 .row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);width:100%;text-align:left;min-height:56px}
 .row:last-child{border-bottom:0}a.row{color:var(--text)}
+.row.pr{min-height:44px;padding:9px 12px 9px 14px;gap:10px}.pr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr .nm.off{color:var(--dim);text-decoration:line-through}.code{font:12px ui-monospace,Consolas,monospace;color:var(--dim);flex:none;letter-spacing:.3px}
+.pr .n{font-size:13px;color:var(--dim);flex:none;text-align:right;min-width:52px;white-space:nowrap}.pr .tag{align-self:center;font-size:11px;padding:2px 6px}
+@media (max-width:360px){.pr .code{display:none}}
 .av{width:38px;height:38px;border-radius:12px;background:var(--raise);display:flex;align-items:center;justify-content:center;font:700 17px var(--disp);color:var(--cyan);flex:none}
 .grow{flex:1;min-width:0}.nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sm{font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chev{color:var(--faint);font-size:22px;line-height:1}
@@ -124,11 +128,12 @@ details.card[open] summary{margin-bottom:10px}details.card summary:after{content
 var SLOW_AVG=40,SLOW_LOW=20,FREE_GB=10;
 var app=document.getElementById("app"),bar=document.getElementById("bar");
 var API=window.AGE_API||"",TOK=null,TIMER=null,D=null,LV=null,ST=null,BUILD="";
-var TAB="now",SUB="bugs",DET=null,Q="",ADD=false,HL="",NEWINV=null;
+var TAB="now",SUB="bugs",DET=null,Q="",ADD=false,HL="",NEWINV=null,PSORT="recent";
 var BUG_ST=["new","confirmed","fixed","rejected","duplicate","test"];
 var SW=["#5FD4FF","#FFD21A","#ff7a7a","#7fdc9a","#c79bff","#ff9f5a","#9AA3AB","#5a8cff"];
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function sago(d){var s=(Date.now()-new Date(d))/1000;if(!d||isNaN(s))return "";s=Math.max(0,s);return s<3600?"now":s<86400?Math.round(s/3600)+"h":s<14*86400?Math.round(s/86400)+"d":Math.round(s/604800)+"w"}
 function day(d){if(!d)return "";var t=new Date(d);return isNaN(t)?String(d):t.toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
 function ago(d){if(!d)return "";var s=Math.max(0,(Date.now()-new Date(d))/1000);if(isNaN(s))return String(d);return s<90?"just now":s<5400?Math.round(s/60)+" min ago":s<86400?Math.round(s/3600)+" h ago":s<172800?"yesterday":day(d)}
 function clock(sec){sec=Number(sec)||0;var m=Math.floor(sec/60),h=Math.floor(m/60);return (h?h+":"+String(m%60).padStart(2,"0"):m)+":"+String(sec%60).padStart(2,"0")}
@@ -200,23 +205,35 @@ function viewNow(){var lv=LV||{matches:[],recent:[]},rq=requested().length,nb=ne
  return h}
 
 // ---------- Players ----------
-function viewPlayers(){if(!D)return top("Players","Loading…");var rq=requested(),ps=people(),q=Q.toLowerCase();
- var week=Date.now()-7*86400000,live=(D.keys||[]).filter(function(k){return !/^y/i.test(k.Revoked||"")});
- var active=(D.testers||[]).concat(live).filter(function(t){return t["Last seen"]&&new Date(t["Last seen"])>week}).length;
- var h=top("Players",plural(D.testers.filter(function(t){return t.Status==="approved"}).length+live.length,"tester")+", "+active+" active this week",'<button class="pill" data-act="add">'+(ADD?"Close":"+ Invite")+'</button>');
+// One compact row per person (and per unused invite): name, invite code, matches, last seen.
+function lastMatchBy(){var o={};(D?D.matches:[]).forEach(function(m){(m.players||[]).forEach(function(q){if(q.ai)return;var k=String(q.name||"").toLowerCase();if(m.Started&&(!o[k]||new Date(m.Started)>new Date(o[k])))o[k]=m.Started})});return o}
+function newest(){var b="";for(var i=0;i<arguments.length;i++){var a=arguments[i];if(a&&(!b||new Date(a)>new Date(b)))b=a}return b}
+function playerEntries(){var lm=lastMatchBy();
+ var ps=people().map(function(p){var k=p.key,t=p.tester,s=p.stats||{};
+  return {p:p,name:p.name,code:k?k.Invite:"",matches:s.matches||0,seen:newest(k&&k["Last seen"],t&&t["Last seen"],lm[String(p.plays||p.name).toLowerCase()]),off:!!(k&&/^y/i.test(k.Revoked||""))||!!(t&&t.Status==="denied")}});
+ openInvites().forEach(function(i){ps.push({inv:i,name:i.Label||"Unused invite",code:i.Code,matches:0,seen:i.Created})});
+ return ps}
+function viewPlayers(){if(!D)return top("Players","Loading…");var rq=requested(),q=Q.toLowerCase(),all=playerEntries();
+ var week=Date.now()-7*86400000,ppl=all.filter(function(e){return e.p}),active=ppl.filter(function(e){return e.seen&&new Date(e.seen)>week}).length,unused=all.length-ppl.length;
+ var h=top("Players",plural(ppl.length,"player")+", "+active+" active this week"+(unused?", "+plural(unused,"unused invite"):""),'<button class="pill" data-act="add">'+(ADD?"Close":"+ Invite")+'</button>');
  if(ADD)h+='<div class="card"><div class="sm" style="white-space:normal;margin-bottom:8px">Make a one-time code for one tester. They download the launcher from the playtest page and type the code in. Codes last 30 days.</div><div class="inline"><input class="field" id="invlabel" maxlength="60" placeholder="Who is it for? (e.g. Sam, Discord)"><button class="btn go" style="flex:none" data-act="newinv">Make code</button></div></div>';
  if(NEWINV)h+='<div class="card hl"><div class="sm">New invite'+(NEWINV.label?" for "+esc(NEWINV.label):"")+'</div><div class="nm" style="font-size:26px;letter-spacing:2px;margin:6px 0 10px;user-select:all">'+esc(NEWINV.code)+'</div><div class="btns"><button class="btn go" data-share="'+esc(NEWINV.code)+'">Share</button><button class="btn" data-copy="'+esc(NEWINV.code)+'">Copy code</button></div></div>';
- var oi=openInvites();
- if(oi.length&&!q)h+='<h2>Unused invites <small>'+oi.length+'</small></h2><div class="list">'+oi.map(function(i){return '<div class="row"><div class="grow"><div class="nm" style="letter-spacing:1px">'+esc(i.Code)+'</div><div class="sm">'+esc(join([i.Label,"made "+ago(i.Created)]))+'</div></div><button class="pill" data-share="'+esc(i.Code)+'">Share</button><button class="pill" style="color:var(--red)" data-revinv="'+esc(i.Code)+'">Revoke</button></div>'}).join("")+'</div>';
- h+='<input class="field" id="q" type="search" placeholder="Search name" value="'+esc(Q)+'">';
  if(rq.length&&!q){h+='<h2>Waiting for you</h2>';rq.slice().reverse().forEach(function(t){h+='<div class="card req"><div style="display:flex;gap:12px;align-items:center"><div class="av" style="color:var(--gold)">'+esc((t.Name||"?").charAt(0).toUpperCase())+'</div><div class="grow"><div class="nm"><a href="'+esc(t.Profile)+'" target="_blank" rel="noopener" style="color:inherit">'+esc(t.Name)+'</a></div><div class="sm">Asked '+esc(ago(t.Requested))+'</div></div></div>'+testerButtons(t)+'</div>'})}
- var list=ps.filter(function(p){return !q||p.name.toLowerCase().indexOf(q)>=0||(p.tester&&String(p.tester["Steam id"]).indexOf(q)>=0)});
- h+='<h2>Everyone <small>'+list.length+'</small></h2>';
- if(!list.length)h+='<div class="card empty">No one matches “'+esc(Q)+'”.</div>';
- else h+='<div class="list">'+list.map(function(p){var s=p.stats||{},pf=s.lastPerf||{},t=p.tester;
-  var bits=[];if(perfSlow(pf))bits.push('<span class="slow">'+esc(pf.avgFps)+' fps</span>');if(s.matches)bits.push(plural(s.matches,"match")+(s.wins?", "+s.wins+" won":""));if(s.bugs)bits.push(plural(s.bugs,"bug"));if(s.specs&&s.specs.gpu)bits.push(esc(s.specs.gpu));var tk=t||p.key;if(!bits.length&&tk)bits.push(tk["Last seen"]?"Seen "+esc(ago(tk["Last seen"])):"Not seen yet");if(p.key&&!s.matches)bits.push("invite "+esc(p.key.Invite));
-  return '<button class="row" data-det="player" data-id="'+esc(p.name)+'"><div class="av">'+esc(p.name.charAt(0).toUpperCase())+'</div><div class="grow"><div class="nm">'+esc(p.name)+'</div><div class="sm">'+bits.join(", ")+'</div></div>'+(t&&t.Status!=="approved"?'<span class="tag '+esc(t.Status)+'">'+esc(t.Status)+'</span>':"")+(p.key?keyTag(p.key):"")+chev+'</button>'}).join("")+'</div>';
+ h+='<input class="field" id="q" type="search" placeholder="Search name or code" value="'+esc(Q)+'">';
+ h+='<div class="seg" style="position:static;margin:0 0 10px"><button data-psort="recent" class="'+(PSORT==="recent"?"on":"")+'">Recent</button><button data-psort="matches" class="'+(PSORT==="matches"?"on":"")+'">Matches</button><button data-psort="name" class="'+(PSORT==="name"?"on":"")+'">Name</button></div>';
+ var list=all.filter(function(e){return !q||e.name.toLowerCase().indexOf(q)>=0||String(e.code||"").toLowerCase().indexOf(q)>=0||(e.p&&e.p.plays&&e.p.plays.toLowerCase().indexOf(q)>=0)});
+ var tm=function(d){return d?new Date(d).getTime()||0:0};
+ list.sort(PSORT==="name"?function(a,b){return a.name.localeCompare(b.name)}:PSORT==="matches"?function(a,b){return b.matches-a.matches||tm(b.seen)-tm(a.seen)}:function(a,b){return tm(b.seen)-tm(a.seen)||a.name.localeCompare(b.name)});
+ if(!list.length)return h+'<div class="card empty">'+(q?'No one matches “'+esc(Q)+'”.':'No players yet. Tap + Invite to make a code.')+'</div>';
+ h+='<div class="list">'+list.map(function(e){
+  if(e.inv)return '<button class="row pr" data-det="invite" data-id="'+esc(e.code)+'"><div class="nm dim">'+esc(e.name)+'</div><span class="code">'+esc(e.code)+'</span><span class="tag requested">unused</span>'+chev+'</button>';
+  var n=e.matches?e.matches+(e.matches===1?" game":" games"):"",sa=sago(e.seen);
+  return '<button class="row pr" data-det="player" data-id="'+esc(e.name)+'"><div class="nm'+(e.off?" off":"")+'">'+esc(e.name)+'</div>'+(e.code?'<span class="code">'+esc(e.code)+'</span>':"")+'<span class="n">'+esc(n&&sa?n+" · "+sa:n||sa)+'</span>'+chev+'</button>'}).join("")+'</div>';
  return h}
+function detInvite(code){var i=(D.invites||[]).filter(function(x){return x.Code===code})[0];if(!i)return backBar("Players")+'<div class="card empty">This invite is not in the list any more.</div>';
+ var h=backBar("Players")+'<div class="dh"><h1>'+esc(i.Label||"Invite")+'</h1><div class="sub" style="margin-top:6px"><span class="tag requested">not used yet</span></div></div>';
+ h+='<div class="card"><div class="nm" style="font-size:24px;letter-spacing:2px;margin:2px 0 10px;user-select:all">'+esc(i.Code)+'</div><div class="kv">'+kvRows({Made:day(i.Created),Expires:i.Expires?day(i.Expires):""})+'</div><div class="btns"><button class="btn go" data-share="'+esc(i.Code)+'">Share</button><button class="btn" data-copy="'+esc(i.Code)+'">Copy code</button></div></div>';
+ return h+'<div class="btns"><button class="btn no" data-revinv="'+esc(i.Code)+'">Revoke this code</button></div>'}
 
 // ---------- Reports ----------
 function bugCard(b){var st=b.Status||"new",md=bugMedia(b);
@@ -266,12 +283,11 @@ function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';i
   +'<div class="meter">'+parts.map(function(x){return '<i style="width:'+(x[1]/cap*100).toFixed(2)+'%;background:'+x[2]+'"></i>'}).join("")+'</div>'
   +'<div class="legend">'+parts.map(function(x){return '<span style="--c:'+x[2]+'">'+esc(x[0])+' '+kb(x[1])+'</span>'}).join("")+'</div>'
   +'<div class="sm" style="margin-top:8px;white-space:normal">'+(pct>80?'<span class="slow">Nearly full. Above 10 GB, Cloudflare charges about $0.015 per GB a month.</span> ':'')+plural(ST.count||0,"file")+'. Nothing is deleted automatically.</div></div>'}
-var MORE=[["access","Access","Block a build or a tester",'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>'],
- ["releases","Releases","Builds testers can download",'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'],
+var MORE=[["releases","Releases","Builds testers can download",'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'],
  ["objectives","Challenges","Points, trophies, edit and switch off",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
  ["visits","Site visits","Who opened the playtest page",'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
  ["pings","E-mail log","E-mails that would have been sent",'<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>']];
-function moreSub(k){if(!D)return "";if(k==="access")return D.access.filter(function(a){return /^y/i.test(a.Blocked)}).length+" blocked";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000&&!/bot/.test(vKind(v))}).length+" this week (no bots)";return ""}
+function moreSub(k){if(!D)return "";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000&&!/bot/.test(vKind(v))}).length+" this week (no bots)";return ""}
 function viewMore(){var h=top("More","Signed in with Steam");
  h+='<h2>Phone notifications</h2><div id="pushbox">'+pushHtml()+'</div>';
  h+='<h2>Storage</h2>'+storageHtml();
@@ -323,25 +339,21 @@ function detPlayer(name){var p=people().filter(function(x){return x.name===name}
  h+='<div class="dh"><h1>'+esc(name)+'</h1><div class="sub" style="margin-top:6px">'+(k?(keyTag(k)||'<span class="tag approved">invited</span>')+' '+(k["Last seen"]?"seen "+esc(ago(k["Last seen"])):"not seen yet"):t?'<span class="tag '+esc(t.Status)+'">'+esc(t.Status)+'</span> '+(t["Last seen"]?"seen "+esc(ago(t["Last seen"])):"not seen yet"):"Not on the tester list")+'</div></div>';
  h+='<div class="stats"><div class="stat"><div class="v">'+(s.matches||0)+'</div><div class="k">Matches</div></div><div class="stat"><div class="v">'+(s.wins||0)+'<span class="faint">/'+(s.losses||0)+'</span></div><div class="k">Won / lost</div></div><div class="stat"><div class="v">'+(s.minutes||0)+'</div><div class="k">Minutes</div></div>'
   +'<div class="stat"><div class="v">'+(s.bugs||0)+'</div><div class="k">Bugs</div></div><div class="stat"><div class="v">'+(s.points||0)+'</div><div class="k">Points</div></div><div class="stat"><div class="v'+(perfSlow(pf)?" slow":"")+'">'+(pf.avgFps||"–")+'</div><div class="k">Last fps</div></div></div>';
+ var who={},sid=(t&&t["Steam id"])||(D.ids&&(D.ids[p.plays||name]||D.ids[name]))||"";sid=/^7656119\d{10}$/.test(String(sid))?String(sid):"";
+ if(k){who["Invite code"]=k.Invite;who["Tester id"]=k.Id;who.Joined=day(k.Created);who["Last seen"]=k["Last seen"]?ago(k["Last seen"]):"not yet";if(k.Device)who.Device=k.Device;if(p.plays)who["In game as"]=p.plays}
+ who["Steam ID"]=sid||"Not available: testers don't sign in with Steam and the game hasn't reported one";
+ h+='<div class="card" style="margin-top:6px"><div class="kv">'+kvRows(who)+'</div>'+(k?'<div class="btns">'+(/^y/i.test(k.Revoked||"")?'<button class="btn go" data-key="'+esc(k.Id)+'" data-rv="0">Give access back</button>':'<button class="btn no" data-key="'+esc(k.Id)+'" data-rv="1">Revoke key</button>')+'</div>':'<div class="sm" style="white-space:normal;margin-top:8px">No invite key on file: seen only in match reports'+(t?" (old Steam sign-in)":"")+'.</div>')+'</div>';
  var info={};if(s.specs){info.GPU=s.specs.gpu;info.CPU=s.specs.cpu;info.RAM=s.specs.ramGb?s.specs.ramGb+" GB":"";info.Screen=s.specs.resolution}
  if(pf.low1Fps)info["1% low"]=pf.low1Fps+" fps";if(s.trophies&&s.trophies.length)info.Trophies=s.trophies.join(", ");if(s.builds&&s.builds.length)info.Builds=s.builds.join(", ");
- if(k){info["Tester id"]=k.Id;info.Invite=k.Invite;info.Joined=day(k.Created);if(p.plays)info["In game as"]=p.plays}
- if(t){info["Steam id"]=t["Steam id"];info.Requested=day(t.Requested);if(t.Decided)info.Decided=day(t.Decided);if(t.Note)info.Note=t.Note}
- if(Object.keys(info).length)h+='<div class="card" style="margin-top:6px"><div class="kv">'+kvRows(info)+'</div>'+(t&&t.Profile?'<div class="btns"><a class="btn" href="'+esc(t.Profile)+'" target="_blank" rel="noopener">Steam profile</a></div>':"")+'</div>';
- if(k)h+=/^y/i.test(k.Revoked||"")?'<div class="btns"><button class="btn go" data-key="'+esc(k.Id)+'" data-rv="0">Give access back</button></div>':'<div class="btns"><button class="btn no" data-key="'+esc(k.Id)+'" data-rv="1">Revoke access</button></div>';
- if(t){h+=t.Status==="approved"?'<div class="btns"><button class="btn no" data-tester="'+esc(t["Steam id"])+'" data-st="denied">Remove access</button></div>':testerButtons(t)}
- var pn=p.plays||name,ms=D?D.matches.filter(function(m){return (m.players||[]).some(function(q){return !q.ai&&q.name===pn})}).slice(0,15):[];
- if(ms.length)h+='<h2>Matches</h2><div class="list">'+ms.map(matchRow).join("")+'</div>';
- var bugs=D?D.bugs.filter(function(b){return b.Player===pn||(k&&b.Tester===k.Id)}).reverse():[];
- if(bugs.length)h+='<h2>Bugs</h2><div class="list">'+bugs.map(bugRow).join("")+'</div>';
+ if(t){info.Requested=day(t.Requested);if(t.Decided)info.Decided=day(t.Decided);if(t.Note)info.Note=t.Note}
+ if(Object.keys(info).length)h+='<h2>PC and progress</h2><div class="card"><div class="kv">'+kvRows(info)+'</div>'+(t&&t.Profile?'<div class="btns"><a class="btn" href="'+esc(t.Profile)+'" target="_blank" rel="noopener">Steam profile</a></div>':"")+'</div>';
+ if(t){h+=t.Status==="approved"?'<div class="btns"><button class="btn no" data-tester="'+esc(t["Steam id"])+'" data-st="denied">Remove Steam access</button></div>':testerButtons(t)}
+ var pn=String(p.plays||name).toLowerCase(),nm=name.toLowerCase(),mine=function(n){n=String(n||"").toLowerCase();return n===pn||n===nm};
+ var ms=D?D.matches.filter(function(m){return (m.players||[]).some(function(q){return !q.ai&&mine(q.name)})}):[];
+ if(ms.length)h+='<h2>Matches <small>'+ms.length+'</small></h2><div class="list">'+ms.slice(0,20).map(matchRow).join("")+'</div>'+(ms.length>20?'<div class="sm" style="padding:0 4px 10px">Latest 20 shown.</div>':"");
+ var bugs=D?D.bugs.filter(function(b){return mine(b.Player)||(k&&b.Tester===k.Id)}).reverse():[];
+ h+='<h2>Reports <small>'+bugs.length+'</small></h2>'+(bugs.length?'<div class="list">'+bugs.map(bugRow).join("")+'</div>':'<div class="card empty">No bug reports yet.</div>');
  return h}
-function detAccess(){var h=backBar("More")+'<div class="dh"><h1>Access</h1><div class="sub">Blocked builds won\'t start; blocked testers can\'t download.</div></div>';
- h+='<div class="card"><div class="seg" style="position:static;margin-bottom:10px"><button data-atype="build" class="'+(ATYPE==="build"?"on":"")+'">Build</button><button data-atype="tester" class="'+(ATYPE==="tester"?"on":"")+'">Tester</button></div>'
-  +'<input class="field" id="aval" placeholder="'+(ATYPE==="build"?"playtest-nov-4":"Steam id 7656119…")+'"><input class="field" id="anote" placeholder="Message they see (optional)">'
-  +'<div class="btns" style="margin-top:0"><button class="btn" data-act="aallow">Allow</button><button class="btn no" data-act="ablock">Block</button></div></div>';
- h+=D.access.length?'<div class="list">'+D.access.map(function(a){var b=/^y/i.test(a.Blocked);return '<div class="acc"><div class="grow"><div class="nm">'+esc(a.Value)+'</div><div class="sm">'+esc(join([a.Type,a.Note,ago(a.Changed)]))+'</div></div><button class="btn'+(b?"":" no")+'" style="flex:none;min-height:38px" data-acc="'+esc(a.Type)+'" data-val="'+esc(a.Value)+'" data-bl="'+(b?0:1)+'">'+(b?"Allow":"Block")+'</button></div>'}).join("")+'</div>':'<div class="card empty">Nothing is blocked.</div>';
- return h}
-var ATYPE="build";
 function detReleases(){var h=backBar("More")+'<div class="dh"><h1>Releases</h1></div>';
  return h+(D.releases.length?'<div class="list">'+D.releases.slice().reverse().map(function(r){return '<div class="acc"><div class="grow"><div class="nm">'+esc(r.name)+'</div><div class="sm">'+esc(join([r.sizeMb?r.sizeMb+" MB":"",r.stored==="r2"?"stored here":r.stored==="link"?"external link":"missing",day(r.added)]))+'</div></div><button class="btn" style="flex:none;min-height:38px" data-rel="'+esc(r.name)+'">Get link</button></div>'}).join("")+'</div>':'<div class="card empty">No builds yet.</div>')}
 var OBJED=null;
@@ -383,7 +395,7 @@ function render(){if(!TOK)return;bar.hidden=false;
  setBadge("bdp",rq);setBadge("bdr",nb);
  [].forEach.call(bar.querySelectorAll(".tab"),function(t){t.classList.toggle("on",t.dataset.tab===TAB)});
  var a=document.activeElement,keepQ=a&&a.id==="q",pos=keepQ?a.selectionStart:0,h;
- if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,access:detAccess,releases:detReleases,objectives:detObjectives,visits:detVisits,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
+ if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,invite:detInvite,releases:detReleases,objectives:detObjectives,visits:detVisits,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
  else h=({now:viewNow,players:viewPlayers,reports:viewReports,more:viewMore}[TAB])();
  app.innerHTML=h;
  if(keepQ){var q=document.getElementById("q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(e){}}}
@@ -396,6 +408,7 @@ window.addEventListener("popstate",function(e){DET=e.state&&e.state.det||null;re
 // ---------- events ----------
 document.addEventListener("click",function(e){var t=e.target.closest("button,a,[data-det]");if(!t)return;var d=t.dataset;
  if(d.tab){go(d.tab);return}
+ if(d.psort){PSORT=d.psort;ls("agepsort",PSORT);render();return}
  if(d.vall){VALL=!VALL;render();return}
  if(d.unblock){op({op:"launcherUnblock"}).then(function(r){if(r.ok){D.launcherBlock=null;render();toast("Launcher downloads are back on.")}else toast(r.error||"Failed")});return}
  if(d.go){go(d.go,d.sub);return}
@@ -406,8 +419,6 @@ document.addEventListener("click",function(e){var t=e.target.closest("button,a,[
  if(d.bug){var b=D.bugs.filter(function(x){return x["Bug id"]===d.bug})[0],bp=b?Number(b.Points)||0:0;if(b)b.Status=d.st;render();op({op:"setBug",bugId:d.bug,status:d.st,points:d.st==="rejected"||d.st==="test"||d.st==="duplicate"?0:d.st==="confirmed"&&!bp?1:undefined}).then(function(r){if(r.ok)toast("Marked "+d.st+".")});return}
  if(d.tester){var tt=D.testers.filter(function(x){return x["Steam id"]===d.tester})[0];if(tt)tt.Status=d.st;render();op({op:"setTester",steamId:d.tester,status:d.st}).then(function(r){if(r.ok)toast(d.st==="approved"?"Approved.":"Denied.");load()});return}
  if(d.set){op({op:"setSetting",event:d.set,on:d.on==="1"}).then(function(){return Promise.all([loadLive(),load()])});return}
- if(d.acc){op({op:"setAccess",type:d.acc,value:d.val,blocked:d.bl==="1"}).then(load);return}
- if(d.atype){ATYPE=d.atype;render();return}
  if(d.rel){op({op:"releaseLink",build:d.rel}).then(function(r){if(!r.ok)return;if(navigator.share)navigator.share({title:d.rel,url:r.url}).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(r.url).then(function(){toast("Link copied. It works for 30 minutes.")})});return}
  if(d.share){var tx=inviteText(d.share);if(navigator.share)navigator.share({text:tx}).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(tx).then(function(){toast("Invite message copied.")});return}
  if(d.copy){if(navigator.clipboard)navigator.clipboard.writeText(d.copy).then(function(){toast("Code copied.")});return}
@@ -423,7 +434,6 @@ document.addEventListener("click",function(e){var t=e.target.closest("button,a,[
   op({op:"saveObjective",row:row,was:was||row.Id}).then(function(r){if(r.ok){D.challenges=r.challenges;OBJED=null;toast("Saved.");render()}});return}
  if(a==="newinv"){var lb=document.getElementById("invlabel").value.trim();op({op:"newInvite",label:lb}).then(function(r){if(r.ok){ADD=false;NEWINV={code:r.code,label:lb};load()}});return}
  if(a==="addsid"){var v=document.getElementById("newsid").value.trim();if(!/^7656119\d{10}$/.test(v))return toast("That isn't a Steam id. It starts with 7656119 and has 17 digits.");op({op:"setTester",steamId:v,status:"approved"}).then(function(r){if(r.ok){ADD=false;toast("Approved.");load()}});return}
- if(a==="ablock"||a==="aallow"){var val=document.getElementById("aval").value.trim();if(!val)return toast("Type a build or a Steam id first.");op({op:"setAccess",type:ATYPE,value:val,blocked:a==="ablock",note:document.getElementById("anote").value}).then(function(r){if(r.ok){toast(a==="ablock"?"Blocked.":"Allowed.");load()}});return}
  if(a==="pushon"){pushOn();return}
  if(a==="pushoff"){pushOff();return}
  if(a==="testpush"){PUSHMSG="Sending…";pushRefresh();op({op:"testPush"}).then(function(r){PUSHMSG=r.ok?"Test sent.":"";pushRefresh()});return}
@@ -462,7 +472,7 @@ function goHash(hash){var h=new URLSearchParams(String(hash||"").replace(/^#/,""
  render();return true}
 
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
- TAB=ls("agetab")||"now";if(!/^(now|players|reports|more)$/.test(TAB))TAB="now";TOK=ls("ageadm");
+ TAB=ls("agetab")||"now";PSORT=ls("agepsort")||"recent";if(!/^(now|players|reports|more)$/.test(TAB))TAB="now";TOK=ls("ageadm");
  if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
  if(!TOK)return signIn();
  goHash(location.hash);render();load();loadLive();if(TAB==="more")loadStorage();seen();pushCheck();
