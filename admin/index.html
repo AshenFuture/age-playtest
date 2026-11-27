@@ -120,6 +120,7 @@ details.card[open] summary{margin-bottom:10px}details.card summary:after{content
 <button class="tab" data-tab="now"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Now</button>
 <button class="tab" data-tab="players"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.4 3.4 0 010 6.8M18 14.8c2 .7 3.2 2.4 3.6 5.2"/></svg>Players<span class="bd" id="bdp" hidden></span></button>
 <button class="tab" data-tab="reports"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>Reports<span class="bd" id="bdr" hidden></span></button>
+<button class="tab" data-tab="site"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Site</button>
 <button class="tab" data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</button>
 </div></nav>
 <script>/*API*/</script>
@@ -285,7 +286,6 @@ function storageHtml(){if(!ST)return '<div class="card sm">Measuring…</div>';i
   +'<div class="sm" style="margin-top:8px;white-space:normal">'+(pct>80?'<span class="slow">Nearly full. Above 10 GB, Cloudflare charges about $0.015 per GB a month.</span> ':'')+plural(ST.count||0,"file")+'. Nothing is deleted automatically.</div></div>'}
 var MORE=[["releases","Releases","Builds testers can download",'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'],
  ["objectives","Challenges","Points, trophies, edit and switch off",'<path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0z"/>'],
- ["visits","Site visits","Who opened the playtest page",'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
  ["pings","E-mail log","E-mails that would have been sent",'<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>']];
 function moreSub(k){if(!D)return "";if(k==="releases")return plural(D.releases.length,"build");if(k==="objectives")return plural(D.objectives.length,"active challenge");if(k==="visits")return D.visits.filter(function(v){return new Date(v.Time)>Date.now()-7*86400000&&!/bot/.test(vKind(v))}).length+" this week (no bots)";return ""}
 function viewMore(){var h=top("More","Signed in with Steam");
@@ -375,16 +375,59 @@ function detObjectives(){var h=backBar("More")+'<div class="dh"><h1>Challenges</
   +'<div class="sm" style="white-space:normal;margin-top:4px;font-family:ui-monospace,monospace">'+esc(o.Stat||"")+(/[<>=]/.test(o.Stat||"")?"":" "+esc(o.Compare||">=")+" "+esc(o.Target==null?"":o.Target))+'</div>'
   +'<div class="btns"><button class="btn" data-objon="'+esc(o.Id)+'" data-on="'+(on?"0":"1")+'">'+(on?"Turn off":"Turn on")+'</button><button class="btn" data-objed="'+esc(o.Id)+'">Edit</button><button class="btn no" data-objdel="'+esc(o.Id)+'">Delete</button></div></div>'}).join(""):'<div class="card empty">No challenges yet.</div>';
  return h}
+// ---------- Site tab: who is doing what on the playtest site ----------
 // Visit kind: the server's guess (Kind column, from 2026-11-25); older rows get a guess from the user agent and clock.
 function vKind(v){if(v.Kind)return v.Kind;if(v.Tester)return "tester";var ua=v["User agent"]||"",m=/Chrome\/(\d+)/.exec(ua);
  if(/bot|crawl|spider|headless|lighthouse|preview|curl|python/i.test(ua)||(m&&+m[1]<120))return "bot";if(v["Time zone"]==="UTC")return "likely bot";return "person"}
-var VALL=false;
-function detVisits(){var by={},vs=D.visits.map(function(v){var k=vKind(v);by[k==="us"?"you":k]=(by[k==="us"?"you":k]||0)+1;return [v,k]});
- var shown=VALL?vs:vs.filter(function(x){return !/bot/.test(x[1])}),hid=vs.length-shown.length;
- var h=backBar("More")+'<div class="dh"><h1>Site visits</h1><div class="sub">Last '+vs.length+': '+esc(Object.keys(by).map(function(k){return by[k]+" "+k}).join(", "))+'</div></div>';
- h+='<div style="display:flex;gap:8px;margin:0 0 10px"><button class="pill" data-vall="1">'+(VALL?"Hide bots":"Show bots too ("+hid+")")+'</button></div>';
- return h+(shown.length?'<div class="list">'+shown.slice(0,300).map(function(x){var v=x[0],k=x[1];
-  return '<div class="row"><div class="grow"><div class="nm">'+esc(k==="us"?"You":v.Tester||v.Event)+(v.Tester?' <span class="dim">'+esc(v.Event)+'</span>':"")+'</div><div class="sm">'+esc(join([v.Country,v.Network,v.Device,v.OS,v.Browser,v["Time zone"],v.Page,v.Build]))+'</div>'+(v.Why||v.Referrer?'<div class="sm dim">'+esc(join([v.Why,v.Referrer?"from "+v.Referrer:"",v["IP hash"]?"ip "+v["IP hash"]:""]))+'</div>':"")+'</div><span class="tag'+(k==="person"||k==="tester"?" approved":"")+'">'+esc(k==="us"?"you":k)+'</span><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">'+(hid?"Only bots so far.":"No visits yet.")+'</div>')}
+function isBot(k){return /bot/.test(k)}
+function countryName(c){if(!c)return "";try{return new Intl.DisplayNames(["en"],{type:"region"}).of(c)||c}catch(e){return c}}
+// A bot's likely job, in plain words, from its user agent, network and clock: [who, what it was doing].
+function botWhat(v){var ua=v["User agent"]||"",net=v.Network||"",m=/Chrome\/(\d+)/.exec(ua);
+ var se=/Googlebot|bingbot|DuckDuckBot|YandexBot|Baiduspider|Applebot|Slurp/i.exec(ua);if(se)return ["Search engine ("+se[0].replace(/bot$/i,"")+")","Reading the page so it can show up in search results. Harmless."];
+ var lp=/facebookexternalhit|Discordbot|Twitterbot|Slackbot|WhatsApp|TelegramBot|LinkedInBot|SkypeUriPreview|redditbot/i.exec(ua);if(lp)return ["Link preview ("+lp[0].replace(/bot|externalhit|UriPreview/ig,"")+")","Someone pasted the site link in a chat or post, and the app fetched the page to show a preview."];
+ if(/GPTBot|ClaudeBot|CCBot|PerplexityBot|Bytespider|Amazonbot/i.test(ua))return ["AI crawler","Collecting web pages for an AI service. Harmless."];
+ if(/curl|wget|python|go-http|java\/|okhttp|axios|node-fetch/i.test(ua))return ["Script","A small program fetched the page directly. Usually a scanner checking what the site is."];
+ if(/Headless|puppeteer|playwright|selenium/i.test(ua)||v.Automation)return ["Automated browser","A robot-driven browser loaded the page, usually to take a screenshot or scan it for weaknesses."];
+ if(m&&+m[1]<120)return ["Scanner","Pretends to be a very old browser (Chrome "+m[1]+"). Typical of scanners that sweep new websites looking for known weak spots."];
+ if(v["Time zone"]==="UTC"&&/1366x768|375x812/.test(v.Screen||""))return ["Site checker","Loads the page every hour as a desktop and a phone together. A monitoring or SEO service that found the new site."];
+ if(net)return ["Cloud server ("+net+")","A program on a rented server loaded the page. Usually an uptime monitor or a security scanner, not a person."];
+ return ["Probably a bot","Its clock is on UTC like a server's, and it did nothing but load the page."]}
+// Same connection (IP hash) as a signed-in tester or you: an anonymous visit is very likely that person.
+var IPWHO={};function ipWho(){IPWHO={};(D?D.visits:[]).forEach(function(v){var k=vKind(v);if(v["IP hash"]&&(k==="us"||k==="tester"))IPWHO[v["IP hash"]]=k==="us"?"You":v.Tester})}
+function vWho(v,k){if(k==="us")return "You";if(k==="tester")return v.Tester||"A tester";if(isBot(k))return botWhat(v)[0];
+ if(v["IP hash"]&&IPWHO[v["IP hash"]])return IPWHO[v["IP hash"]]+" (not signed in)";
+ var c=countryName(v.Country);return "Visitor"+(c?" from "+c:"")+(v["IP hash"]?" #"+v["IP hash"].slice(0,4):"")}
+function vWhat(v){var e=v.Event||"",b=v.Build||"";
+ if(e==="view")return "Opened the playtest page"+(v.Page&&v.Page!=="/"?" ("+v.Page+")":"");
+ if(e==="launcher")return "Clicked Download launcher";
+ if(e==="launcher-file")return "Downloaded the launcher file";
+ if(e==="discord")return "Clicked the Discord link";
+ if(e==="download")return "Downloaded game build "+(b||"?")+(v.Source==="launcher"?" in the launcher":" from the page");
+ return e}
+function vIsDownload(v){return /^(download|launcher|launcher-file)$/.test(v.Event||"")}
+function vKey(v){var w=v["IP hash"]&&IPWHO[v["IP hash"]];if(w)return "n:"+w;if(v.Kind==="us")return "n:You";if(v.Tester)return "n:"+v.Tester;return v["Tester id"]?"t:"+v["Tester id"]:v["IP hash"]?"ip:"+v["IP hash"]:"v:"+(v.Visitor||v.Time)}
+var SITEF="people";
+function viewSite(){ipWho();var all=(D?D.visits:[]).map(function(v){return [v,vKind(v)]}),wk=Date.now()-7*86400000;
+ var h=top("Site",D?"Who is doing what, last 7 days":"Loading…");if(!D)return h;
+ var recent=all.filter(function(x){return new Date(x[0].Time)>wk});
+ var n={views:0,launcher:0,builds:0,bots:0};recent.forEach(function(x){var v=x[0];if(isBot(x[1])){n.bots++;return}
+  if(v.Event==="view")n.views++;else if(v.Event==="launcher-file"||v.Event==="launcher")n.launcher++;else if(v.Event==="download")n.builds++});
+ h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+[[n.views,"Page visits"],[n.launcher,"Launcher downloads"],[n.builds,"Build downloads"],[n.bots,"Bot visits"]].map(function(x){return '<div style="border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:10px 6px;text-align:center"><div style="font:700 24px/1 var(--disp);color:'+(x[0]?"var(--gold)":"var(--faint)")+'">'+x[0]+'</div><div class="sm" style="white-space:normal;margin-top:4px">'+x[1]+'</div></div>'}).join("")+'</div>';
+ // Who: one line per person this week (you, testers, visitors) with what they did.
+ var ppl={},order=[];recent.forEach(function(x){if(isBot(x[1]))return;var k=vKey(x[0]);if(!ppl[k]){ppl[k]={who:k.slice(0,2)==="n:"?k.slice(2):vWho(x[0],x[1]),acts:{},last:x[0].Time};order.push(k)}var w=vWhat(x[0]);ppl[k].acts[w]=(ppl[k].acts[w]||0)+1});
+ h+='<h2>Who, this week</h2>'+(order.length?'<div class="list">'+order.map(function(k){var p=ppl[k];
+  return '<div class="row"><div class="grow"><div class="nm">'+esc(p.who)+'</div><div class="sm" style="white-space:normal">'+esc(Object.keys(p.acts).map(function(a){return a+(p.acts[a]>1?" ×"+p.acts[a]:"")}).join(" · "))+'</div></div><span class="sm" style="flex:none">'+esc(ago(p.last))+'</span></div>'}).join("")+'</div>':'<div class="card empty">Nobody yet this week.</div>');
+ // Activity: every event, newest first, filtered.
+ var F=[["people","People"],["downloads","Downloads"],["bots","Bots"],["all","All"]];
+ h+='<h2>Activity</h2><div style="display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap">'+F.map(function(f){return '<button class="pill" data-sitef="'+f[0]+'"'+(SITEF===f[0]?' style="color:var(--gold);border-color:var(--gold-l)"':"")+'>'+f[1]+'</button>'}).join("")+'</div>';
+ var list=all.filter(function(x){var b=isBot(x[1]);return SITEF==="all"||(SITEF==="bots"?b:SITEF==="downloads"?!b&&vIsDownload(x[0]):!b)});
+ h+=list.length?'<div class="list">'+list.slice(0,300).map(function(x){var v=x[0],k=x[1],b=isBot(k),bw=b?botWhat(v):null;
+  var tag=k==="us"?"you":k==="tester"?"tester":b?"bot":"visitor";
+  return '<div class="row"><div class="grow"><div class="nm">'+esc(vWho(v,k))+'</div><div class="sm" style="white-space:normal">'+esc(vWhat(v))+'</div>'
+   +(bw?'<div class="sm dim" style="white-space:normal">'+esc(bw[1])+'</div>':"")
+   +'<div class="sm dim">'+esc(join([countryName(v.Country),b?"":v.Network,v.Device,v.OS,v.Browser,v.Referrer?"from "+v.Referrer:""]))+'</div></div>'
+   +'<span class="tag'+(tag==="you"||tag==="tester"?" approved":"")+'">'+esc(tag)+'</span><span class="sm" style="flex:none">'+esc(ago(v.Time))+'</span></div>'}).join("")+'</div>':'<div class="card empty">Nothing here yet.</div>';
+ return h+'<p class="sm" style="white-space:normal;padding:4px">Attempts to open hidden files (like .env or WordPress pages) are blocked by Cloudflare before they reach the site, so they are not listed here.</p>'}
 function detPings(){var h=backBar("More")+'<div class="dh"><h1>E-mail log</h1><div class="sub" style="white-space:normal">E-mail isn\'t set up yet. These are the e-mails that would have gone out.</div></div>';
  h+='<details class="card"><summary><span>Which e-mails to log</span></summary><div>'+D.settings.map(function(s){var on=/^y/i.test(s.On);return '<button class="acc" style="padding-left:0;padding-right:0" data-set="'+esc(s.Event)+'" data-on="'+(on?0:1)+'"><div class="grow"><div>'+esc(s.Event)+'</div><div class="sm" style="white-space:normal">'+esc(s["What it means"])+'</div></div>'+tog(on,"")+'</button>'}).join("")+'</div></details>';
  return h+(D.pings.length?D.pings.map(function(p){return '<div class="card"><div class="nm" style="white-space:normal">'+esc(String(p.Subject||"").replace(/^\[Age\] /,""))+'</div><div class="sm">'+esc(join([p.Event,ago(p.Time)]))+'</div><div class="txt sm" style="white-space:pre-wrap">'+esc(p.Text)+'</div></div>'}).join(""):'<div class="card empty">Nothing logged yet.</div>')}
@@ -395,8 +438,8 @@ function render(){if(!TOK)return;bar.hidden=false;
  setBadge("bdp",rq);setBadge("bdr",nb);
  [].forEach.call(bar.querySelectorAll(".tab"),function(t){t.classList.toggle("on",t.dataset.tab===TAB)});
  var a=document.activeElement,keepQ=a&&a.id==="q",pos=keepQ?a.selectionStart:0,h;
- if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,invite:detInvite,releases:detReleases,objectives:detObjectives,visits:detVisits,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
- else h=({now:viewNow,players:viewPlayers,reports:viewReports,more:viewMore}[TAB])();
+ if(DET){if(!D&&DET.t!=="match")h='<p class="empty">Loading…</p>';else h=({match:detMatch,bug:detBug,player:detPlayer,invite:detInvite,releases:detReleases,objectives:detObjectives,visits:viewSite,pings:detPings}[DET.t]||function(){return ""})(DET.id)}
+ else h=({now:viewNow,players:viewPlayers,reports:viewReports,site:viewSite,more:viewMore}[TAB])();
  app.innerHTML=h;
  if(keepQ){var q=document.getElementById("q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(e){}}}
  if(HL&&!DET){var el=document.getElementById("bug-"+HL)||app.querySelector(".hl");if(el){el.scrollIntoView({block:"center"});HL=""}}}
@@ -409,7 +452,7 @@ window.addEventListener("popstate",function(e){DET=e.state&&e.state.det||null;re
 document.addEventListener("click",function(e){var t=e.target.closest("button,a,[data-det]");if(!t)return;var d=t.dataset;
  if(d.tab){go(d.tab);return}
  if(d.psort){PSORT=d.psort;ls("agepsort",PSORT);render();return}
- if(d.vall){VALL=!VALL;render();return}
+ if(d.sitef){SITEF=d.sitef;render();return}
  if(d.unblock){op({op:"launcherUnblock"}).then(function(r){if(r.ok){D.launcherBlock=null;render();toast("Launcher downloads are back on.")}else toast(r.error||"Failed")});return}
  if(d.go){go(d.go,d.sub);return}
  if(d.sub&&!d.go){SUB=d.sub;render();return}
@@ -472,7 +515,7 @@ function goHash(hash){var h=new URLSearchParams(String(hash||"").replace(/^#/,""
  render();return true}
 
 function start(){var h=new URLSearchParams(location.hash.slice(1));if(h.get("token")){ls("ageadm",h.get("token"));history.replaceState(null,"",location.pathname)}
- TAB=ls("agetab")||"now";PSORT=ls("agepsort")||"recent";if(!/^(now|players|reports|more)$/.test(TAB))TAB="now";TOK=ls("ageadm");
+ TAB=ls("agetab")||"now";PSORT=ls("agepsort")||"recent";if(!/^(now|players|reports|site|more)$/.test(TAB))TAB="now";TOK=ls("ageadm");
  if(h.get("error")){history.replaceState(null,"",location.pathname);return signIn(h.get("error"))}
  if(!TOK)return signIn();
  goHash(location.hash);render();load();loadLive();if(TAB==="more")loadStorage();seen();pushCheck();
